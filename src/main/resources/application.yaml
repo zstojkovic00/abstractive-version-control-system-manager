@@ -1,0 +1,3 @@
+spring:
+  application:
+    name: abstractive-version-control-system-manager
