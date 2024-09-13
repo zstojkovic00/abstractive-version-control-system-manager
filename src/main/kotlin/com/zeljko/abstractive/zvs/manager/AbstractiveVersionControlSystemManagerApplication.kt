@@ -1,4 +1,4 @@
-package com.zeljko.abstractive_history_tracking_system_manager
+package com.zeljko.abstractive.zvs.manager
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
