@@ -4,8 +4,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 
 @SpringBootApplication
-class AbstractiveHistoryTrackingSystemManagerApplication
+class AbstractiveVersionControlSystemManagerApplication
 
 fun main(args: Array<String>) {
-	runApplication<AbstractiveHistoryTrackingSystemManagerApplication>(*args)
+	runApplication<AbstractiveVersionControlSystemManagerApplication>(*args)
 }

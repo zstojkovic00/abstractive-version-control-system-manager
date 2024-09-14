@@ -1,3 +1,7 @@
 spring:
   application:
     name: abstractive-version-control-system-manager
+
+  shell:
+    interactive:
+      enabled: true
