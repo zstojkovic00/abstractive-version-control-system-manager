@@ -1,12 +1,12 @@
 package com.zeljko.abstractive.zvs.manager
 
-import org.springframework.shell.standard.ShellComponent
-import org.springframework.shell.standard.ShellMethod
+import org.springframework.shell.command.annotation.Command
+
 import java.io.File
 
-@ShellComponent
+@Command(command = ["zvs"], description = "Zvs commands")
 class ZvsCommands {
-    @ShellMethod(key = ["init"], value = "Initialize empty .zvs repository")
+    @Command(command = ["init"], description = "Initialize empty .zvs repository")
     fun init(): String {
         val currentDirectory = System.getProperty("user.dir")
         val zvsDirectory = File(currentDirectory, ".zvs");
@@ -25,7 +25,7 @@ class ZvsCommands {
             File(zvsDirectory, "HEAD").writeText("ref: refs/heads/master\n")
             File(zvsDirectory, "description").writeText("Unnamed repository; edit this file 'description' to name the repository.\n")
 
-            return "Initialized empty Git repository in $currentDirectory/.zvs/"
+            return "Initialized empty Zvs repository in $currentDirectory/.zvs/"
         } catch (e: Exception) {
             return "Error initializing Zvs repository: ${e.message}"
         }
