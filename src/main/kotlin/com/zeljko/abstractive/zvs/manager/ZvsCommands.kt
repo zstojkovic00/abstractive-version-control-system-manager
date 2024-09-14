@@ -2,11 +2,10 @@ package com.zeljko.abstractive.zvs.manager
 
 import org.springframework.shell.command.annotation.Command
 import org.springframework.shell.command.annotation.Option
-import java.io.ByteArrayOutputStream
 
 import java.io.File
+import java.nio.file.Files
 import java.nio.file.Paths
-import java.util.zip.Inflater
 
 @Command(command = ["zvs"], description = "Zvs commands")
 class ZvsCommands {
@@ -40,28 +39,24 @@ class ZvsCommands {
 
     @Command(command = ["cat-file"], description = "Read blob object")
     fun decompressBlobObject(@Option(shortNames = ['p'], required = true, description = "pretty print") objectHash: String): String {
+
+        if (objectHash.length != 40) {
+            return "Error: Invalid object hash. It must be exactly 40 characters long."
+        }
+
         val path = Paths.get(".git/objects/${objectHash.substring(0, 2)}/${objectHash.substring(2)}")
 
-        return path.toString()
-    }
-
-    fun ByteArray.zlibDecompress(): String {
-        val inflater = Inflater()
-        val outputStream = ByteArrayOutputStream()
-
-        return outputStream.use {
-            val buffer = ByteArray(1024)
-
-            inflater.setInput(this)
-
-            var count = -1
-            while (count != 0) {
-                count = inflater.inflate(buffer)
-                outputStream.write(buffer, 0, count)
-            }
-
-            inflater.end()
-            outputStream.toString("UTF-8")
+        if (!Files.exists(path)) {
+            return "Error: Object not found."
         }
+
+        val compressedContent = Files.readAllBytes(path)
+        val decompressedContent = compressedContent.zlibDecompress()
+
+        if (!decompressedContent.startsWith("blob")) {
+            return "Only blob objects are currently supported."
+        }
+
+        return decompressedContent
     }
 }
