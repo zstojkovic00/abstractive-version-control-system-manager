@@ -15,7 +15,7 @@ fun ByteArray.zlibDecompress(): String {
     val inflater = Inflater()
     val outputStream = ByteArrayOutputStream()
 
-    return outputStream.use {
+    val decompressedString = outputStream.use {
         val buffer = ByteArray(1024)
 
         inflater.setInput(this)
@@ -31,7 +31,7 @@ fun ByteArray.zlibDecompress(): String {
     }
 
     // replace nul (unicode representation of ASCII code 0) with \0
-    // return decompressedString.replace("\u0000", "\\0")
+    return decompressedString.replace("\u0000", "\\0")
 }
 
 /**

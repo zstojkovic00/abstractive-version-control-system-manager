@@ -76,10 +76,11 @@ class ZsvCommands {
         val path: Path = Paths.get(fileToCompress)
 
         val content: String = Files.readString(path)
-        val compressedContent: ByteArray = content.zlibCompress()
+        val blobContent = "blob ${content.length}\u0000$content"
+        val compressedContent: ByteArray = blobContent.zlibCompress()
 
         // create blob name
-        val blobNameSHA1: String = ("blob ${content.length}\u0000$content").toSha1()
+        val blobNameSHA1: String = blobContent.toSha1()
 
         crateBlobDirectory(File(currentDirectory), compressedContent, blobNameSHA1)
 
