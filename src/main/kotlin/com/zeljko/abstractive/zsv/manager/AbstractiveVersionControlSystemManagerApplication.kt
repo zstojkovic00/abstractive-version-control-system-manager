@@ -1,4 +1,4 @@
-package com.zeljko.abstractive.zvs.manager
+package com.zeljko.abstractive.zsv.manager
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication

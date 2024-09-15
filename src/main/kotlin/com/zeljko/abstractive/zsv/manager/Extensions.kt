@@ -1,4 +1,4 @@
-package com.zeljko.abstractive.zvs.manager
+package com.zeljko.abstractive.zsv.manager
 
 import java.io.ByteArrayOutputStream
 import java.security.MessageDigest
@@ -15,7 +15,7 @@ fun ByteArray.zlibDecompress(): String {
     val inflater = Inflater()
     val outputStream = ByteArrayOutputStream()
 
-    val decompressedString = outputStream.use {
+    return outputStream.use {
         val buffer = ByteArray(1024)
 
         inflater.setInput(this)
@@ -31,10 +31,8 @@ fun ByteArray.zlibDecompress(): String {
     }
 
     // replace nul (unicode representation of ASCII code 0) with \0
-    return decompressedString.replace("\u0000", "\\0")
+    // return decompressedString.replace("\u0000", "\\0")
 }
-
-
 
 /**
  * Compress a string using ZLIB.
