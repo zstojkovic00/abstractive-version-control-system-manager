@@ -5,3 +5,7 @@ spring:
   shell:
     interactive:
       enabled: true
+
+  main:
+    banner-mode: off
+    web-application-type: none
