@@ -62,3 +62,6 @@ fun String.toSha1(): String {
             .digest(this.toByteArray())
             .joinToString(separator = "", transform = { "%02x".format(it) })
 }
+
+fun ByteArray.toHexString() = joinToString("") { "%02x".format(it) }
+

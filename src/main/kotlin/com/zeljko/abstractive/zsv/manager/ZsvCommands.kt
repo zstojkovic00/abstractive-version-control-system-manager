@@ -49,7 +49,7 @@ class ZsvCommands {
             return "Error: Invalid object hash. It must be exactly 40 characters long."
         }
 
-        val path = Paths.get(".zsv/objects/${objectHashToDecompress.substring(0, 2)}/${objectHashToDecompress.substring(2)}")
+        val path = getHashObjectPath(objectHashToDecompress)
 
         if (!Files.exists(path)) {
             return "Error: Object not found."
@@ -64,7 +64,6 @@ class ZsvCommands {
 
         return decompressedContent
     }
-
 
     // zsv hash-object -w test.txt
     @Command(command = ["hash-object"], description = "Create a blob object")
@@ -91,10 +90,52 @@ class ZsvCommands {
         return blobNameSHA1
     }
 
+
+    @Command(command = ["ls-tree"], description = "Read tree object")
+    fun decompressTreeObject(@Option(longNames = ["name-only"], required = true, description = "When used with --name-only flag, it only prints name of file") nameOnly: Boolean,
+                             @Option(shortNames = ['f'], required = false, description = "Path to directory you want to decompress") objectHashToDecompress: String
+    ): List<String> {
+
+        val path = getHashObjectPathTest(objectHashToDecompress)
+
+        val compressedContent = Files.readAllBytes(path)
+        val decompressedContent = compressedContent.zlibDecompress()
+
+        if (!decompressedContent.startsWith("tree")) {
+            return listOf("Error: Not a tree object.")
+        }
+
+        parseTreeContent(decompressedContent)
+
+        return listOf(decompressedContent)
+    }
+
+    private fun parseTreeContent(decompressedContent: String): List<String> {
+        // 100644 (regular file)
+        // 100766 (executable file)
+        // 120000 (symbolic link)
+        // 040000 (directory)
+
+        // directory    object       hash                                        name
+        // 040000       tree         4c2de5dff69543f68b6238e0510d420b59b334f7    main
+
+
+    }
+
     private fun crateBlobDirectory(directory: File, compressedContent: ByteArray, blobName: String) {
         val subDirectory = File(directory, blobName.substring(0, 2))
         subDirectory.mkdirs()
         val newFile = File(subDirectory, blobName.substring(2))
         newFile.writeBytes(compressedContent)
+    }
+
+    private fun getHashObjectPath(objectHashToDecompress: String): Path {
+        val path = Paths.get(".zsv/objects/${objectHashToDecompress.substring(0, 2)}/${objectHashToDecompress.substring(2)}")
+        return path
+    }
+
+    private fun getHashObjectPathTest(objectHashToDecompress: String): Path {
+        val path = Paths.get(".git/objects/${objectHashToDecompress.substring(0, 2)}/${objectHashToDecompress.substring(2)}")
+        return path
     }
 }
