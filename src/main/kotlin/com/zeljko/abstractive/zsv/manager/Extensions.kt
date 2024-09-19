@@ -15,7 +15,7 @@ fun ByteArray.zlibDecompress(): String {
     val inflater = Inflater()
     val outputStream = ByteArrayOutputStream()
 
-    val decompressedString = outputStream.use {
+    return outputStream.use {
         val buffer = ByteArray(1024)
 
         inflater.setInput(this)
@@ -31,7 +31,7 @@ fun ByteArray.zlibDecompress(): String {
     }
 
     // replace nul (unicode representation of ASCII code 0) with \0
-    return decompressedString.replace("\u0000", "\\0")
+//    return decompressedString.replace("\u0000", "\\0")
 }
 
 /**
@@ -58,9 +58,9 @@ fun String.zlibCompress(): ByteArray {
  */
 fun String.toSha1(): String {
     return MessageDigest
-            .getInstance("SHA-1")
-            .digest(this.toByteArray())
-            .joinToString(separator = "", transform = { "%02x".format(it) })
+        .getInstance("SHA-1")
+        .digest(this.toByteArray())
+        .joinToString(separator = "", transform = { "%02x".format(it) })
 }
 
 fun ByteArray.toHexString() = joinToString("") { "%02x".format(it) }

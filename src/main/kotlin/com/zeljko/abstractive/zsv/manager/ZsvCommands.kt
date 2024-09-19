@@ -12,7 +12,7 @@ import java.nio.file.Paths
 class ZsvCommands {
 
     @Command(command = ["init"], description = "Initialize empty .zsv repository")
-    fun init(): String {
+    fun initRepository(): String {
 
         val currentDirectory = System.getProperty("user.dir")
         val zsvDirectory = File(currentDirectory, ".zsv");
@@ -30,7 +30,9 @@ class ZsvCommands {
             }
 
             File(zsvDirectory, "HEAD").writeText("ref: refs/heads/master\n")
-            File(zsvDirectory, "description").writeText("Unnamed repository; edit this file 'description' to name the repository.\n")
+            File(
+                zsvDirectory, "description"
+            ).writeText("Unnamed repository; edit this file 'description' to name the repository.\n")
 
             return "Initialized empty zsv repository in $currentDirectory/.zsv/"
         } catch (e: Exception) {
@@ -42,14 +44,14 @@ class ZsvCommands {
     // zsv cat-file -p
     @Command(command = ["cat-file"], description = "Read blob object")
     fun decompressBlobObject(
-            @Option(shortNames = ['p'], required = true, description = "pretty print") prettyPrint: Boolean,
-            @Option(shortNames = ['f'], required = true, description = "Path to the file to decompress") objectHashToDecompress: String
+        @Option(shortNames = ['p'], required = false, description = "pretty print") prettyPrint: Boolean,
+        @Option(shortNames = ['f'], required = true, description = "Path to the file to decompress") blobSha: String
     ): String {
-        if (objectHashToDecompress.length != 40) {
+        if (blobSha.length != 40) {
             return "Error: Invalid object hash. It must be exactly 40 characters long."
         }
 
-        val path = getHashObjectPath(objectHashToDecompress)
+        val path = getHashObjectPath(blobSha)
 
         if (!Files.exists(path)) {
             return "Error: Object not found."
@@ -68,8 +70,13 @@ class ZsvCommands {
     // zsv hash-object -w test.txt
     @Command(command = ["hash-object"], description = "Create a blob object")
     fun compressFileToBlobObject(
-            @Option(shortNames = ['w'], required = false, description = "When used with the -w flag, it also writes the object to the .zsv/objects directory") write: Boolean = false,
-            @Option(shortNames = ['f'], required = true, description = "Path to the file to compress") fileToCompress: String
+        @Option(
+            shortNames = ['w'],
+            required = false,
+            description = "When used with the -w flag, it also writes the object to the .zsv/objects directory"
+        ) write: Boolean = false, @Option(
+            shortNames = ['f'], required = true, description = "Path to the file to compress"
+        ) fileToCompress: String
     ): String {
         val currentDirectory: String = System.getProperty("user.dir")
         val path: Path = Paths.get(fileToCompress)
@@ -92,35 +99,61 @@ class ZsvCommands {
 
 
     @Command(command = ["ls-tree"], description = "Read tree object")
-    fun decompressTreeObject(@Option(longNames = ["name-only"], required = true, description = "When used with --name-only flag, it only prints name of file") nameOnly: Boolean,
-                             @Option(shortNames = ['f'], required = false, description = "Path to directory you want to decompress") objectHashToDecompress: String
-    ): List<String> {
+    fun decompressTreeObject(
+        @Option(longNames = ["name-only"], required = true, description = "When used with --name-only flag, it only prints name of file") nameOnly: Boolean,
+        @Option(shortNames = ['f'], required = false, description = "Path to directory you want to decompress") treeSha: String
+    ): String {
 
-        val path = getHashObjectPathTest(objectHashToDecompress)
+        val path = getHashObjectPathTest(treeSha)
 
-        val compressedContent = Files.readAllBytes(path)
+        val compressedContent: ByteArray = Files.readAllBytes(path)
         val decompressedContent = compressedContent.zlibDecompress()
 
         if (!decompressedContent.startsWith("tree")) {
-            return listOf("Error: Not a tree object.")
+            return "Error: Not a tree object."
+        }
+        println(decompressedContent)
+
+        val trees = parseTreeContent(decompressedContent)
+
+
+        return if (nameOnly) {
+            trees.joinToString("\n") { it.fileName }
+        } else {
+            trees.joinToString("\n") { tree ->
+                "${tree.fileMode} " +
+                        "${if (tree.fileMode.startsWith("040")) "tree" else "blob"} " +
+                        "${tree.objectSha}\t${tree.fileName}"
+            }
+        }
+    }
+
+    // 100644 (regular file)
+    // 100766 (executable file)
+    // 120000 (symbolic link)
+    // 040000 (directory)
+
+    // directory    object       hash                                        name
+    // 040000       tree         4c2de5dff69543f68b6238e0510d420b59b334f7    main
+
+    private fun parseTreeContent(decompressedContent: String): List<Tree> {
+
+        // remove <tree> <size>
+        val content = decompressedContent.split("\u0000").drop(1).joinToString("")
+        var index = 0
+
+        while(index < content.length){
+            val nextTreeIndex = content.indexOf("40000", index + 1)
+
         }
 
-        parseTreeContent(decompressedContent)
-
-        return listOf(decompressedContent)
+        return listOf(Tree(
+            fileMode = "0",
+            objectSha = "0",
+            fileName = "0"
+        ))
     }
 
-    private fun parseTreeContent(decompressedContent: String): List<String> {
-        // 100644 (regular file)
-        // 100766 (executable file)
-        // 120000 (symbolic link)
-        // 040000 (directory)
-
-        // directory    object       hash                                        name
-        // 040000       tree         4c2de5dff69543f68b6238e0510d420b59b334f7    main
-
-
-    }
 
     private fun crateBlobDirectory(directory: File, compressedContent: ByteArray, blobName: String) {
         val subDirectory = File(directory, blobName.substring(0, 2))
@@ -139,3 +172,5 @@ class ZsvCommands {
         return path
     }
 }
+
+
