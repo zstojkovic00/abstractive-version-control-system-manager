@@ -70,13 +70,8 @@ class ZsvCommands {
     // zsv hash-object -w test.txt
     @Command(command = ["hash-object"], description = "Create a blob object")
     fun compressFileToBlobObject(
-        @Option(
-            shortNames = ['w'],
-            required = false,
-            description = "When used with the -w flag, it also writes the object to the .zsv/objects directory"
-        ) write: Boolean = false, @Option(
-            shortNames = ['f'], required = true, description = "Path to the file to compress"
-        ) fileToCompress: String
+        @Option(shortNames = ['w'], required = false, description = "When used with the -w flag, it also writes the object to the .zsv/objects directory") write: Boolean = false,
+        @Option(shortNames = ['f'], required = true, description = "Path to the file to compress") fileToCompress: String
     ): String {
         val currentDirectory: String = System.getProperty("user.dir")
         val path: Path = Paths.get(fileToCompress)
@@ -112,54 +107,92 @@ class ZsvCommands {
         if (!decompressedContent.startsWith("tree")) {
             return "Error: Not a tree object."
         }
-        println(decompressedContent)
 
-        val trees = parseTreeContent(decompressedContent)
+//        print(decompressedContent)
 
+
+        val treeObjects: List<Tree> = parseTreeContent(decompressedContent)
 
         return if (nameOnly) {
-            trees.joinToString("\n") { it.fileName }
+            treeObjects.joinToString("\n") { it.fileName }
         } else {
-            trees.joinToString("\n") { tree ->
-                "${tree.fileMode} " +
-                        "${if (tree.fileMode.startsWith("040")) "tree" else "blob"} " +
-                        "${tree.objectSha}\t${tree.fileName}"
+            treeObjects.joinToString("\n") { tree ->
+
+                String.format("%-6s %-4s %-40s %s",
+                    tree.fileMode,
+                    getObjectType(tree.fileMode),
+                    tree.objectSha,
+                    tree.fileName)
             }
         }
     }
 
-/*  100644 (regular file)
-    100766 (executable file)
-    120000 (symbolic link)
-    040000 (directory)
+    /*  100644 (regular file)
+        100766 (executable file)
+        120000 (symbolic link)
+        040000 (directory)
 
-    directory    object       hash                                        name
-    120000       blob         541cb64f9b85000af670c5b925fa216ac6f98291    link_to_test.txt
-    040000       tree         f433240f70c738bfcc2f48994d7ca0c843a763ad    main
-    100644       blob         16e9ca692c04fe47655e06ed163cddd0f4c49687    test.sh
-    100644       blob         10500012fca9b4425b50de67a7258a12cba0c076    test.txt
-    040000       tree         81803f67f37d96f8b76ae69719ebb5e5cbcbb869    test
+        directory    object       hash                                        name
+        120000       blob         541cb64f9b85000af670c5b925fa216ac6f98291    link_to_test.txt
+        040000       tree         f433240f70c738bfcc2f48994d7ca0c843a763ad    main
+        100644       blob         16e9ca692c04fe47655e06ed163cddd0f4c49687    test.sh
+        100644       blob         10500012fca9b4425b50de67a7258a12cba0c076    test.txt
+        040000       tree         81803f67f37d96f8b76ae69719ebb5e5cbcbb869    test
 
-    */
+        */
     private fun parseTreeContent(decompressedContent: String): List<Tree> {
+        val content = decompressedContent.substringAfter('\u0000')
+        val validModes = setOf("120000", "100644", "100755", "040000", "40000")
+        val treeObjects = mutableListOf<Tree>()
+        var treeBuilder = StringBuilder()
+        var i = 0
 
-        // remove <tree> <size>
-        val content = decompressedContent.split("\u0000").drop(1).joinToString("")
-        val validModes = listOf("120000", "100644", "100755", "40000")
-        var index = 0
+        while (i < content.length) {
+            val remainingContent = content.substring(i)
+            val foundMode = validModes.find { remainingContent.startsWith(it) }
 
-        while(index < content.length){
-            val nextTreeIndex = content.indexOf("40000", index + 1)
-
+            if (foundMode != null) {
+                if (treeBuilder.isNotEmpty()) {
+                    treeObjects.add(parseTree(treeBuilder.toString()))
+                    treeBuilder = StringBuilder()
+                }
+                treeBuilder.append(foundMode)
+                i += foundMode.length
+            } else {
+                treeBuilder.append(content[i])
+                i++
+            }
         }
 
-        return listOf(Tree(
-            fileMode = "0",
-            objectSha = "0",
-            fileName = "0"
-        ))
+        if (treeBuilder.isNotEmpty()) {
+            treeObjects.add(parseTree(treeBuilder.toString()))
+        }
+
+        return treeObjects
     }
 
+    private fun parseTree(entry: String): Tree {
+        val parts = entry.split('\u0000')
+        val modeAndName = parts[0].split(' ', limit = 2)
+        val fileMode = modeAndName[0]
+        val fileName = modeAndName[1]
+        val objectSha = parts.subList(1, parts.size).joinToString("\u0000")
+
+        return Tree(
+            fileMode = fileMode,
+            fileName = fileName,
+            objectSha = objectSha
+        )
+    }
+
+    private fun getObjectType(fileMode: String): String {
+        return when (fileMode) {
+            "120000" -> "blob"
+            "100644", "100755" -> "blob"
+            "040000", "40000" -> "tree"
+            else -> "unknown"
+        }
+    }
 
     private fun crateBlobDirectory(directory: File, compressedContent: ByteArray, blobName: String) {
         val subDirectory = File(directory, blobName.substring(0, 2))
