@@ -1,4 +1,4 @@
-package com.zeljko.abstractive.zsv.manager
+package com.zeljko.abstractive.zsv.manager.utils
 
 import java.io.ByteArrayOutputStream
 import java.security.MessageDigest
@@ -9,9 +9,9 @@ import java.util.zip.Inflater
 /**
  * Decompress a byte array using ZLIB.
  *
- * @return an UTF-8 encoded string.
+ * @return an byte array.
  */
-fun ByteArray.zlibDecompress(): String {
+fun ByteArray.zlibDecompress(): ByteArray {
     val inflater = Inflater()
     val outputStream = ByteArrayOutputStream()
 
@@ -27,12 +27,10 @@ fun ByteArray.zlibDecompress(): String {
         }
 
         inflater.end()
-        outputStream.toString("UTF-8")
+        outputStream.toByteArray()
     }
-
-    // replace nul (unicode representation of ASCII code 0) with \0
-//    return decompressedString.replace("\u0000", "\\0")
 }
+
 
 /**
  * Compress a string using ZLIB.
@@ -64,4 +62,3 @@ fun String.toSha1(): String {
 }
 
 fun ByteArray.toHexString() = joinToString("") { "%02x".format(it) }
-
