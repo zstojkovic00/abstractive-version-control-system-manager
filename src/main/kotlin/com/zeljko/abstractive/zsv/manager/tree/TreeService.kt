@@ -33,13 +33,13 @@ class TreeService(private val blobService: BlobService) {
 
 
     fun compressTreeObject(path: Path): String {
-        val trees = mutableListOf<Tree>()
+        val objects = mutableListOf<Tree>()
         Files.list(path).use { stream ->
             stream.forEach { file ->
                 val name = file.fileName.toString()
                 if (Files.isDirectory(file)) {
                     val treeSha = compressTreeObject(file)
-                    trees.add(Tree(REGULAR_FILE.mode, name, treeSha))
+                    objects.add(Tree(DIRECTORY.mode, name, treeSha))
                 } else {
                     val blobSha = blobService.compressFileToBlobObject(true, file)
                     val fileMode = when {
@@ -47,15 +47,16 @@ class TreeService(private val blobService: BlobService) {
                         Files.isSymbolicLink(file) -> SYMBOLIC_LINK
                         else -> REGULAR_FILE
                     }
-                    trees.add(Tree(fileMode.mode, name, blobSha))
+                    objects.add(Tree(fileMode.mode, name, blobSha))
                 }
             }
         }
-        return storeTree(trees)
+        return storeTree(objects)
     }
 
-    private fun storeTree(trees: List<Tree>): String {
-        val treeContent = buildTreeContent(trees)
+    private fun storeTree(objects: List<Tree>): String {
+        val sortedObjects = objects.sortedBy { it.fileName }
+        val treeContent = buildTreeContent(sortedObjects)
         val treeHeader = "tree ${treeContent.size}\u0000".toByteArray()
         val content = treeHeader + treeContent
 
@@ -65,14 +66,10 @@ class TreeService(private val blobService: BlobService) {
         val currentDirectory = Paths.get("").toAbsolutePath()
         val objectsDirectory = currentDirectory.resolve(".zsv/objects")
         storeObject(objectsDirectory, treeSha, compressedContent)
-        trees.forEach {
-            println(it)
-        }
         return treeSha
     }
 
-    // 0aaefbcaf0f14b68e60d4e5c70a1391bad79f57a
-    // 0aaefbcaf0f14b68e60d4e5c70a1391bad79f57a
+
     private fun buildTreeContent(trees: List<Tree>): ByteArray {
         val outputStream = ByteArrayOutputStream()
         trees.forEach { tree ->
