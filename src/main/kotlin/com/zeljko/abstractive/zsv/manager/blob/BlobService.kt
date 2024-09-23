@@ -2,9 +2,10 @@ package com.zeljko.abstractive.zsv.manager.blob
 
 import com.zeljko.abstractive.zsv.manager.utils.*
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getObjectShaPath
-import com.zeljko.abstractive.zsv.manager.utils.FileUtils.storeBlob
+import com.zeljko.abstractive.zsv.manager.utils.FileUtils.storeObject
 import org.springframework.stereotype.Service
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
 
 
@@ -31,8 +32,7 @@ class BlobService {
         )
     }
 
-    fun compressFileToBlobObject(write: Boolean, fileToCompress: String): String {
-        val path = Paths.get(fileToCompress)
+    fun compressFileToBlobObject(write: Boolean, path: Path): String {
         val fileContent = Files.readString(path)
 
         val blobHeader = "blob ${fileContent.length}\u0000"
@@ -48,11 +48,11 @@ class BlobService {
         )
 
         val currentDirectory = Paths.get("").toAbsolutePath()
-        storeBlob(currentDirectory, blob.blobSha, blob.content)
+//        storeObject(currentDirectory, blob.blobSha, blob.content)
 
         if (write) {
             val objectsDirectory = currentDirectory.resolve(".zsv/objects")
-            storeBlob(objectsDirectory, blob.blobSha, blob.content)
+            storeObject(objectsDirectory, blob.blobSha, blob.content)
         }
 
         return blob.blobSha

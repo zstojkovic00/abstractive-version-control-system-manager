@@ -23,17 +23,17 @@ object FileUtils {
     }
 
     /**
-    Stores a blob object in the specified directory
+    Stores object in the specified directory
 
     @param directory where the blob will be stored
-    @param blobName. The name of blob (SHA-1 hash)
-    @param compressedContent The compressed content of the blob
+    @param objectSHA. The name of object (SHA-1 hash)
+    @param compressedContent The compressed content of the object
      */
 
-    fun storeBlob(directory: Path, blobName: String, compressedContent: ByteArray) {
-        val subDirectory = directory.resolve(blobName.substring(0, 2))
+    fun storeObject(directory: Path, objectSha: String, compressedContent: ByteArray) {
+        val subDirectory = directory.resolve(objectSha.substring(0, 2))
         Files.createDirectories(subDirectory)
-        val blobFile = subDirectory.resolve(blobName.substring(2))
+        val blobFile = subDirectory.resolve(objectSha.substring(2))
         Files.write(blobFile, compressedContent)
     }
 

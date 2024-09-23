@@ -3,6 +3,7 @@ package com.zeljko.abstractive.zsv.manager.blob
 import org.springframework.shell.command.annotation.Command
 import org.springframework.shell.command.annotation.Option
 import org.springframework.stereotype.Component
+import java.nio.file.Paths
 
 
 @Component
@@ -28,7 +29,8 @@ class BlobCommands(private val blobService: BlobService) {
         @Option(shortNames = ['f'], required = true, description = "Path to the file to compress") fileToCompress: String
     ): String {
 
-        return blobService.compressFileToBlobObject(write, fileToCompress)
+        val path = Paths.get(fileToCompress)
+        return blobService.compressFileToBlobObject(write, path)
     }
 
 }

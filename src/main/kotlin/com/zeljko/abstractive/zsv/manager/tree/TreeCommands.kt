@@ -3,6 +3,7 @@ package com.zeljko.abstractive.zsv.manager.tree
 import org.springframework.shell.command.annotation.Command
 import org.springframework.shell.command.annotation.Option
 import org.springframework.stereotype.Component
+import java.nio.file.Paths
 
 
 @Component
@@ -23,5 +24,11 @@ class TreeCommands(private val treeService: TreeService) {
         } else {
             trees.joinToString("\n") { it.toString() }
         }
+    }
+
+    @Command(command = ["write-tree"], description = "Create tree object")
+    fun compressTreeObject(): String {
+        val treeSha = treeService.compressTreeObject(Paths.get("gradle").toAbsolutePath())
+        return treeSha
     }
 }

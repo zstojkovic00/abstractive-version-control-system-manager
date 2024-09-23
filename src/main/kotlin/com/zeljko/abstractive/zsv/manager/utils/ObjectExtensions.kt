@@ -51,6 +51,23 @@ fun String.zlibCompress(): ByteArray {
     return output.copyOfRange(0, compressedDataLength)
 }
 
+
+/**
+ * Compress a ByteArray using ZLIB.
+ *
+ * @return a compressed ByteArray.
+ */
+fun ByteArray.zlibCompress(): ByteArray {
+    val output = ByteArray(this.size * 2)
+    val compressor = Deflater().apply {
+        setInput(this@zlibCompress)
+        finish()
+    }
+    val compressedDataLength: Int = compressor.deflate(output)
+    return output.copyOfRange(0, compressedDataLength)
+}
+
+
 /**
  * Encrypt String to SHA1 format
  */
@@ -61,4 +78,21 @@ fun String.toSha1(): String {
         .joinToString(separator = "", transform = { "%02x".format(it) })
 }
 
+
+/**
+ * Calculate SHA1 hash of a ByteArray
+ *
+ * @return SHA1 hash as a String
+ */
+fun ByteArray.toSha1(): String {
+    return MessageDigest
+        .getInstance("SHA-1")
+        .digest(this)
+        .joinToString(separator = "", transform = { "%02x".format(it) })
+}
+
 fun ByteArray.toHexString() = joinToString("") { "%02x".format(it) }
+
+fun String.toShaByte(): ByteArray {
+    return ByteArray(this.length / 2) { this.substring(it * 2, it * 2 + 2).toInt(16).toByte() }
+}
