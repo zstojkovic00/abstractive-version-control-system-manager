@@ -33,9 +33,9 @@ class BlobService {
     }
 
     fun compressFileToBlobObject(write: Boolean, path: Path): String {
-        val fileContent = Files.readString(path)
+        val fileContent = Files.readAllBytes(path)
 
-        val blobHeader = "blob ${fileContent.length}\u0000"
+        val blobHeader = "blob ${fileContent.size}\u0000".toByteArray(Charsets.UTF_8)
         val content = blobHeader + fileContent
         val compressedContent = content.zlibCompress()
 
