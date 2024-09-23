@@ -33,23 +33,30 @@ class TreeService(private val blobService: BlobService) {
 
 
     fun compressTreeObject(path: Path): String {
+        // TODO: .gitignore
+        val ignoredDirs = setOf(".zsv", ".git", ".gradle", ".idea", "build")
+
         val objects = mutableListOf<Tree>()
         Files.list(path).use { stream ->
-            stream.forEach { file ->
-                val name = file.fileName.toString()
-                if (Files.isDirectory(file)) {
-                    val treeSha = compressTreeObject(file)
-                    objects.add(Tree(DIRECTORY.mode, name, treeSha))
-                } else {
-                    val blobSha = blobService.compressFileToBlobObject(true, file)
-                    val fileMode = when {
-                        Files.isExecutable(file) -> EXECUTABLE_FILE
-                        Files.isSymbolicLink(file) -> SYMBOLIC_LINK
-                        else -> REGULAR_FILE
-                    }
-                    objects.add(Tree(fileMode.mode, name, blobSha))
+            stream
+                .filter { file ->
+                    !ignoredDirs.contains(file.fileName.toString())
                 }
-            }
+                .forEach { file ->
+                    val name = file.fileName.toString()
+                    if (Files.isDirectory(file)) {
+                        val treeSha = compressTreeObject(file)
+                        objects.add(Tree(DIRECTORY.mode, name, treeSha))
+                    } else {
+                        val blobSha = blobService.compressFileToBlobObject(true, file)
+                        val fileMode = when {
+                            Files.isExecutable(file) -> EXECUTABLE_FILE
+                            Files.isSymbolicLink(file) -> SYMBOLIC_LINK
+                            else -> REGULAR_FILE
+                        }
+                        objects.add(Tree(fileMode.mode, name, blobSha))
+                    }
+                }
         }
         return storeTree(objects)
     }

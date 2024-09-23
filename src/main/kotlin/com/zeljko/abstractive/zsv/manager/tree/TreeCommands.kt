@@ -27,6 +27,6 @@ class TreeCommands(private val treeService: TreeService) {
     }
     @Command(command = ["write-tree"], description = "Create tree object")
     fun compressTreeObject(): String {
-        return treeService.compressTreeObject(Paths.get("gradle").toAbsolutePath())
+        return treeService.compressTreeObject(Paths.get("").toAbsolutePath())
     }
 }
