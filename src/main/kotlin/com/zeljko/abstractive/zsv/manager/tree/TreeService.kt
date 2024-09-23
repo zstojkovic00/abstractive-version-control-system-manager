@@ -4,6 +4,7 @@ import com.zeljko.abstractive.zsv.manager.blob.BlobService
 import com.zeljko.abstractive.zsv.manager.utils.*
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getObjectShaPath
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.storeObject
+import com.zeljko.abstractive.zsv.manager.tree.ObjectType.*
 import org.springframework.shell.command.annotation.Command
 import org.springframework.stereotype.Service
 import java.io.ByteArrayOutputStream
@@ -33,31 +34,28 @@ class TreeService(private val blobService: BlobService) {
 
     fun compressTreeObject(path: Path): String {
         val trees = mutableListOf<Tree>()
-
         Files.list(path).use { stream ->
             stream.forEach { file ->
                 val name = file.fileName.toString()
                 if (Files.isDirectory(file)) {
                     val treeSha = compressTreeObject(file)
-                    trees.add(Tree("40000", name, treeSha))
+                    trees.add(Tree(REGULAR_FILE.mode, name, treeSha))
                 } else {
-                    if (name != "gradle-wrapper.jar") {
-                        val blobSha = blobService.compressFileToBlobObject(true, file)
-                        trees.add(Tree("100644", name, blobSha))
+                    val blobSha = blobService.compressFileToBlobObject(true, file)
+                    val fileMode = when {
+                        Files.isExecutable(file) -> EXECUTABLE_FILE
+                        Files.isSymbolicLink(file) -> SYMBOLIC_LINK
+                        else -> REGULAR_FILE
                     }
+                    trees.add(Tree(fileMode.mode, name, blobSha))
                 }
             }
         }
-
         return storeTree(trees)
     }
 
     private fun storeTree(trees: List<Tree>): String {
-
-        trees.forEach{println(it)}
-
         val treeContent = buildTreeContent(trees)
-
         val treeHeader = "tree ${treeContent.size}\u0000".toByteArray()
         val content = treeHeader + treeContent
 
@@ -66,11 +64,15 @@ class TreeService(private val blobService: BlobService) {
 
         val currentDirectory = Paths.get("").toAbsolutePath()
         val objectsDirectory = currentDirectory.resolve(".zsv/objects")
-
         storeObject(objectsDirectory, treeSha, compressedContent)
+        trees.forEach {
+            println(it)
+        }
         return treeSha
     }
 
+    // 0aaefbcaf0f14b68e60d4e5c70a1391bad79f57a
+    // 0aaefbcaf0f14b68e60d4e5c70a1391bad79f57a
     private fun buildTreeContent(trees: List<Tree>): ByteArray {
         val outputStream = ByteArrayOutputStream()
         trees.forEach { tree ->
