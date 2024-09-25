@@ -33,13 +33,14 @@ class TreeService(private val blobService: BlobService) {
 
     fun compressTreeObject(path: Path): String {
         // TODO: .gitignore
-        val ignoredDirectories = setOf(".zsv", ".git", ".gradle", ".idea", "build")
+        val ignoredItems = setOf(".zsv", ".git", ".gradle", ".idea", "build", "HELP.md",
+            "abstractive-version-control-system-manager.log")
 
         val objects = mutableListOf<Tree>()
         Files.list(path).use { stream ->
             stream
                 .filter { file ->
-                    !ignoredDirectories.contains(file.fileName.toString())
+                    !ignoredItems.contains(file.fileName.toString())
                 }
                 .forEach { file ->
                     val name = file.fileName.toString()
