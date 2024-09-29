@@ -54,7 +54,7 @@ class CommitService {
         val commitSha = commit.toSha1()
 
         val currentDirectory = Paths.get("").toAbsolutePath()
-        val objectsDirectory = currentDirectory.resolve(".zsv/objects")
+        val objectsDirectory = currentDirectory.resolve(".git/objects")
 
         storeObject(objectsDirectory, commitSha, compressedContent)
 

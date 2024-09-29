@@ -74,7 +74,7 @@ class TreeService(private val blobService: BlobService) {
         val treeSha = content.toSha1()
 
         val currentDirectory = Paths.get("").toAbsolutePath()
-        val objectsDirectory = currentDirectory.resolve(".zsv/objects")
+        val objectsDirectory = currentDirectory.resolve(".git/objects")
         storeObject(objectsDirectory, treeSha, compressedContent)
         return treeSha
     }

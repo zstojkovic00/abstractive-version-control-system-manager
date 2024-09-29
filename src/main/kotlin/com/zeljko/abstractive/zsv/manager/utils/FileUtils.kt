@@ -14,7 +14,7 @@ object FileUtils {
      */
     fun getObjectShaPath(objectSha: String): Path {
 
-        val path = Paths.get(".zsv/objects/${objectSha.substring(0, 2)}/${objectSha.substring(2)}")
+        val path = Paths.get(".git/objects/${objectSha.substring(0, 2)}/${objectSha.substring(2)}")
 
         if (!Files.exists(path)) {
             throw ObjectNotFoundException("Object not found.")

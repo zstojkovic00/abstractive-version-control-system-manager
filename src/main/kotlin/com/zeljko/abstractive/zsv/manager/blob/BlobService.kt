@@ -51,7 +51,7 @@ class BlobService {
 //        storeObject(currentDirectory, blob.blobSha, blob.content)
 
         if (write) {
-            val objectsDirectory = currentDirectory.resolve(".zsv/objects")
+            val objectsDirectory = currentDirectory.resolve(".git/objects")
             storeObject(objectsDirectory, blob.blobSha, blob.content)
         }
 
