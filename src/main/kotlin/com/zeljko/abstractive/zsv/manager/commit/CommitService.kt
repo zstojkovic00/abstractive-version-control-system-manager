@@ -40,7 +40,7 @@ class CommitService {
         commitBuilder.append(author)
         commitBuilder.append(committer)
 
-        commitBuilder.append("")
+        commitBuilder.append("\n")
         commitBuilder.append(message)
 
         val commitContent = commitBuilder.toString()
