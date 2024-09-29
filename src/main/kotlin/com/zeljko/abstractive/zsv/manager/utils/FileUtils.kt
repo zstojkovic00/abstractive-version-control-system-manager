@@ -66,10 +66,14 @@ object FileUtils {
         val headContent = Files.readString(headDirectory)
 
         if (headContent.startsWith("ref: ")) {
-            val branchReference = headContent.substringAfter("ref: ")
-            Files.writeString(Paths.get(".git/$branchReference"), commitSha)
+            val branchReference = headContent.substringAfter("ref: ").trim()
+            val branchPath = Paths.get(".git", branchReference)
+            Files.createDirectories(branchPath.parent)
+            Files.writeString(branchPath, commitSha + "\n")
+            println("Updated branch reference: $branchPath with SHA: $commitSha")
         } else {
-            Files.writeString(headDirectory, commitSha)
+            Files.writeString(headDirectory, commitSha + "\n")
+            println("Updated HEAD directly with SHA: $commitSha")
         }
     }
 
