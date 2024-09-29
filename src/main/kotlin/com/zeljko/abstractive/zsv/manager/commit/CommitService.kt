@@ -23,7 +23,7 @@ class CommitService {
         {commit message}
         */
 
-    fun commitTree(message: String, treeSha: String, parentSha: String) : String {
+    fun commitTree(message: String, treeSha: String, parentSha: String): String {
 
         val commitBuilder = StringBuilder()
 
@@ -33,9 +33,9 @@ class CommitService {
             commitBuilder.append("parent $parentSha\n")
         }
 
-        val timestamp = Instant.now().atOffset(ZoneOffset.UTC)
-        val author = "author zstojkovic00 <00zeljkostojkovic@gmail.com> ${timestamp.toEpochSecond()} +0200\n"
-        val committer = "committer zstojkovic00 <00zeljkostojkovic@gmail.com> ${timestamp.toEpochSecond()} +0200\n"
+        // val timestamp = Instant.now().atOffset(ZoneOffset.UTC)
+        val author = "author zstojkovic00 <00zeljkostojkovic@gmail.com> 1727635374 +0200\n"
+        val committer = "committer zstojkovic00 <00zeljkostojkovic@gmail.com> 1727635374 +0200\n"
 
         commitBuilder.append(author)
         commitBuilder.append(committer)
