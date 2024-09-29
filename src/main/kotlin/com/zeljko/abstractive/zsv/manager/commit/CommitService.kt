@@ -53,8 +53,8 @@ class CommitService(
         }
 
         // TODO: Replace with dynamic timestamp and user info from configuration
-        val author = "author zstojkovicTEST00 <00zeljkostojkovic@gmail.com> 1727635374 +0200\n"
-        val committer = "committer zstojkovicTEST00 <00zeljkostojkovic@gmail.com> 1727635374 +0200\n"
+        val author = "author test <test@gmail.com> 1727635374 +0200\n"
+        val committer = "committer test <test@gmail.com> 1727635374 +0200\n"
 
         commitBuilder.append(author)
         commitBuilder.append(committer)
