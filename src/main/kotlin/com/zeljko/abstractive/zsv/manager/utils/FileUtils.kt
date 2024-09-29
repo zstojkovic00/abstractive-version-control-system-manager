@@ -25,7 +25,7 @@ object FileUtils {
     /**
     Stores object in the specified directory
 
-    @param directory where the blob will be stored
+    @param directory where the object will be stored
     @param objectSHA. The name of object (SHA-1 hash)
     @param compressedContent The compressed content of the object
      */

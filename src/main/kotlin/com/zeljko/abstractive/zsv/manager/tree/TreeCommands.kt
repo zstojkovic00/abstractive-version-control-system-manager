@@ -25,6 +25,9 @@ class TreeCommands(private val treeService: TreeService) {
             trees.joinToString("\n") { it.toString() }
         }
     }
+
+    // zsv write-tree -> 5f4a3b5cec8f56436aef85c2304c5a02b5675c2e
+    // git write-tree -> 5f4a3b5cec8f56436aef85c2304c5a02b5675c2e
     @Command(command = ["write-tree"], description = "Create tree object")
     fun compressTreeObject(): String {
         return treeService.compressTreeObject(Paths.get("").toAbsolutePath())
