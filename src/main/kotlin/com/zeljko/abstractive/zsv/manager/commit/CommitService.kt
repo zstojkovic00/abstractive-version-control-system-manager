@@ -34,8 +34,8 @@ class CommitService {
         }
 
         val timestamp = Instant.now().atOffset(ZoneOffset.UTC)
-        val author = "author Zeljko Stojkovic <00zeljkostojkovic@gmail.com> ${timestamp.toEpochSecond()} + 0000\n"
-        val committer = "committer Zeljko Stojkovic <00zeljkostojkovic@gmail.com> ${timestamp.toEpochSecond()} + 0000\n"
+        val author = "author zstojkovic00 <00zeljkostojkovic@gmail.com> ${timestamp.toEpochSecond()} +0200\n"
+        val committer = "committer zstojkovic00 <00zeljkostojkovic@gmail.com> ${timestamp.toEpochSecond()} +0200\n"
 
         commitBuilder.append(author)
         commitBuilder.append(committer)
