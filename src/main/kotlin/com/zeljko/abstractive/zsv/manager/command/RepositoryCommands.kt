@@ -1,17 +1,14 @@
 package com.zeljko.abstractive.zsv.manager.command
 
-import com.zeljko.abstractive.zsv.manager.transport.client.GitNativeClient
-import com.zeljko.abstractive.zsv.manager.transport.model.GitUrl
 import com.zeljko.abstractive.zsv.manager.utils.RepositoryAlreadyExistsException
 import org.springframework.shell.command.annotation.Command
-import org.springframework.shell.command.annotation.Option
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
 
 @Command(command = ["zsv"], description = "Zsv commands")
-class ZsvCommands {
+class RepositoryCommands {
 
     @Command(command = ["init"], description = "Initialize empty .zsv repository")
     fun initRepository(): String {
@@ -33,28 +30,6 @@ class ZsvCommands {
             "Unnamed repository; edit this file 'description' to name the repository.\n", StandardCharsets.UTF_8)
 
         return "Initialized empty zsv repository in $currentDirectory/.zsv/"
-    }
-
-    // zsv clone git://127.0.0.1/test-repo
-    @Command(command = ["clone"], description = "Clone remote repository from git server")
-    fun cloneRepository(
-        @Option(longNames = ["url"], required = true, description = "Url of remote git repository") url: String,
-    ): String {
-
-        val urlWithoutProtocol = url.removePrefix("git://")
-        // parts[0] = 127.0.0.1, parts[1] = test-repo
-        val parts = urlWithoutProtocol.split("/", limit = 2)
-
-        val gitUrl = GitUrl(
-            host = parts[0],
-            port = 9418,
-            path = "/${parts[1]}"
-        )
-
-        val client = GitNativeClient()
-        client.connect(gitUrl)
-
-        return "test"
     }
 }
 
