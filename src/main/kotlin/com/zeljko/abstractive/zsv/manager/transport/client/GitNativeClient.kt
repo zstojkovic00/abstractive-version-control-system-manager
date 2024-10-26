@@ -1,11 +1,12 @@
-package com.zeljko.abstractive.zsv.manager.protocol
+package com.zeljko.abstractive.zsv.manager.transport.client
 
+import com.zeljko.abstractive.zsv.manager.transport.model.GitUrl
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.net.Socket
 import java.nio.charset.StandardCharsets
 
-class GitNativeProtocolClient {
+class GitNativeClient {
     companion object {
         private const val FLUSH_PACKET = "0000"
         private const val NUL_BYTE = '\u0000'

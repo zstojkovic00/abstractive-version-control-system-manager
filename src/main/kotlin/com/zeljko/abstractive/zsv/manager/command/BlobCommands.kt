@@ -1,5 +1,6 @@
-package com.zeljko.abstractive.zsv.manager.blob
+package com.zeljko.abstractive.zsv.manager.command
 
+import com.zeljko.abstractive.zsv.manager.core.services.BlobService
 import org.springframework.shell.command.annotation.Command
 import org.springframework.shell.command.annotation.Option
 import org.springframework.stereotype.Component

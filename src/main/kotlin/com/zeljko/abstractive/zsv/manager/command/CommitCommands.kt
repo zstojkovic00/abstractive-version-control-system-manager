@@ -1,5 +1,6 @@
-package com.zeljko.abstractive.zsv.manager.commit
+package com.zeljko.abstractive.zsv.manager.command
 
+import com.zeljko.abstractive.zsv.manager.core.services.CommitService
 import org.springframework.shell.command.annotation.Command
 import org.springframework.shell.command.annotation.Option
 

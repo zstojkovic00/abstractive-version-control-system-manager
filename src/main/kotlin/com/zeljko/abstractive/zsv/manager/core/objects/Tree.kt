@@ -1,5 +1,5 @@
-package com.zeljko.abstractive.zsv.manager.tree
-import com.zeljko.abstractive.zsv.manager.tree.ObjectType.*
+package com.zeljko.abstractive.zsv.manager.core.objects
+import com.zeljko.abstractive.zsv.manager.core.objects.ObjectType.*
 
 
 /**

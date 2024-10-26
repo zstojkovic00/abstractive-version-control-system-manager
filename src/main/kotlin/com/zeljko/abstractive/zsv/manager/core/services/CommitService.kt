@@ -1,6 +1,5 @@
-package com.zeljko.abstractive.zsv.manager.commit
+package com.zeljko.abstractive.zsv.manager.core.services
 
-import com.zeljko.abstractive.zsv.manager.tree.TreeService
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getCurrentHead
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.storeObject
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.updateCurrentHead

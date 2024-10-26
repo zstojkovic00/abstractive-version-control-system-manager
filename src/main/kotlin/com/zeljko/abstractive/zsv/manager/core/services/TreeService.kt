@@ -1,10 +1,10 @@
-package com.zeljko.abstractive.zsv.manager.tree
+package com.zeljko.abstractive.zsv.manager.core.services
 
-import com.zeljko.abstractive.zsv.manager.blob.BlobService
+import com.zeljko.abstractive.zsv.manager.core.objects.Tree
 import com.zeljko.abstractive.zsv.manager.utils.*
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getObjectShaPath
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.storeObject
-import com.zeljko.abstractive.zsv.manager.tree.ObjectType.*
+import com.zeljko.abstractive.zsv.manager.core.objects.ObjectType.*
 import org.springframework.shell.command.annotation.Command
 import org.springframework.stereotype.Service
 import java.io.ByteArrayOutputStream

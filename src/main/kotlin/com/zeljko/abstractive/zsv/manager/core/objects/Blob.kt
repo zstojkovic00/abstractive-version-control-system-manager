@@ -1,4 +1,4 @@
-package com.zeljko.abstractive.zsv.manager.blob
+package com.zeljko.abstractive.zsv.manager.core.objects
 
 import java.nio.charset.StandardCharsets
 

@@ -1,5 +1,6 @@
-package com.zeljko.abstractive.zsv.manager.tree
+package com.zeljko.abstractive.zsv.manager.command
 
+import com.zeljko.abstractive.zsv.manager.core.services.TreeService
 import org.springframework.shell.command.annotation.Command
 import org.springframework.shell.command.annotation.Option
 import org.springframework.stereotype.Component
@@ -9,7 +10,6 @@ import java.nio.file.Paths
 @Component
 @Command(command = ["zsv"], description = "Zsv commands")
 class TreeCommands(private val treeService: TreeService) {
-
 
     // zsv ls-tree -f 54c4a4a636839e36be577bce569a8030d6d5354c
     @Command(command = ["ls-tree"], description = "Read tree object")

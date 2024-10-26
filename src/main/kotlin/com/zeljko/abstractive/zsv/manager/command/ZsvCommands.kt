@@ -1,7 +1,7 @@
-package com.zeljko.abstractive.zsv.manager
+package com.zeljko.abstractive.zsv.manager.command
 
-import com.zeljko.abstractive.zsv.manager.protocol.GitNativeProtocolClient
-import com.zeljko.abstractive.zsv.manager.protocol.GitUrl
+import com.zeljko.abstractive.zsv.manager.transport.client.GitNativeClient
+import com.zeljko.abstractive.zsv.manager.transport.model.GitUrl
 import com.zeljko.abstractive.zsv.manager.utils.RepositoryAlreadyExistsException
 import org.springframework.shell.command.annotation.Command
 import org.springframework.shell.command.annotation.Option
@@ -51,7 +51,7 @@ class ZsvCommands {
             path = "/${parts[1]}"
         )
 
-        val client = GitNativeProtocolClient()
+        val client = GitNativeClient()
         client.connect(gitUrl)
 
         return "test"

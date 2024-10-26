@@ -1,5 +1,6 @@
-package com.zeljko.abstractive.zsv.manager.blob
+package com.zeljko.abstractive.zsv.manager.core.services
 
+import com.zeljko.abstractive.zsv.manager.core.objects.Blob
 import com.zeljko.abstractive.zsv.manager.utils.*
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getObjectShaPath
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.storeObject

@@ -1,4 +1,4 @@
-package com.zeljko.abstractive.zsv.manager.tree
+package com.zeljko.abstractive.zsv.manager.core.objects
 
 enum class ObjectType(val mode: String) {
 
