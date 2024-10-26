@@ -1,4 +1,4 @@
-package com.zeljko.abstractive.zsv.manager.network
+package com.zeljko.abstractive.zsv.manager.protocol
 
 data class GitUrl(
     val host: String,

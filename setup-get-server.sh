@@ -25,4 +25,4 @@ git push origin master
 cd ..
 
 # Start git daemon
-git daemon --reuseaddr --verbose --base-path=. --export-all
+git daemon --reuseaddr --verbose --base-path=. --export-all --port=9418

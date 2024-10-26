@@ -1,12 +1,10 @@
 package com.zeljko.abstractive.zsv.manager
 
-import com.zeljko.abstractive.zsv.manager.network.GitUrl
+import com.zeljko.abstractive.zsv.manager.protocol.GitNativeProtocolClient
+import com.zeljko.abstractive.zsv.manager.protocol.GitUrl
 import com.zeljko.abstractive.zsv.manager.utils.RepositoryAlreadyExistsException
 import org.springframework.shell.command.annotation.Command
 import org.springframework.shell.command.annotation.Option
-import java.io.DataInputStream
-import java.io.DataOutputStream
-import java.net.Socket
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -44,23 +42,18 @@ class ZsvCommands {
     ): String {
 
         val urlWithoutProtocol = url.removePrefix("git://")
+        // parts[0] = 127.0.0.1, parts[1] = test-repo
         val parts = urlWithoutProtocol.split("/", limit = 2)
 
-        val gitUrl = GitUrl(host = parts[0],
+        val gitUrl = GitUrl(
+            host = parts[0],
             port = 9418,
-            path = "/${parts[1]}")
+            path = "/${parts[1]}"
+        )
 
-        println(gitUrl)
+        val client = GitNativeProtocolClient()
+        client.connect(gitUrl)
 
-        try {
-            val socket = Socket(gitUrl.host, gitUrl.port)
-            val input = DataInputStream(socket.inputStream)
-            val output = DataOutputStream(socket.outputStream)
-
-            socket.close()
-        } catch (e: Exception) {
-            return "Failed to clone repository: ${e.message}"
-        }
         return "test"
     }
 }
