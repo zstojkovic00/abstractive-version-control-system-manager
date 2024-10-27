@@ -1,5 +1,6 @@
 package com.zeljko.abstractive.zsv.manager.transport.client
 
+import com.zeljko.abstractive.zsv.manager.transport.model.GitReference
 import com.zeljko.abstractive.zsv.manager.transport.model.GitUrl
 import java.io.DataInputStream
 import java.io.DataOutputStream
@@ -58,9 +59,28 @@ class GitNativeClient {
             if (length > 0) {
                 val responseData = input.readNBytes(length)
                 val response = responseData.toString(StandardCharsets.UTF_8)
-                println("Server response: $response")
+                val gitReferences = parseResponse(response)
+                println(gitReferences)
             }
         }
+    }
+
+    // f490f44a26417c31c44174e12fdbc5a53a761082 HEADmulti_ack thin-pack side-band side-band-64k ofs-delta shallow deepen-since deepen-not deepen-relative no-progress include-tag multi_ack_detailed symref=HEAD:refs/heads/master object-format=sha1 agent=git/2.34.1
+    // f490f44a26417c31c44174e12fdbc5a53a761082 refs/heads/master
+    // f490f44a26417c31c44174e12fdbc5a53a761082 refs/remotes/origin/master
+    private fun parseResponse(response: String): List<GitReference> {
+        return response.lines()
+            .filter { it.isNotEmpty() }
+            .map { line ->
+                val (sha, rest) = line.split(" ", limit = 2)
+                if (rest.contains(NUL_BYTE)) {
+                    val (refName, capsString) = rest.split(NUL_BYTE, limit = 2)
+                    val capabilities = capsString.split(" ")
+                    GitReference(sha, refName, capabilities)
+                } else {
+                    GitReference(sha, rest)
+                }
+            }
     }
 
     private fun terminateConnection(output: DataOutputStream) {
