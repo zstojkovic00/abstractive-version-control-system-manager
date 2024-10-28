@@ -26,7 +26,7 @@ class NetworkCommands {
         )
 
         val client = GitNativeClient()
-        client.connect(gitUrl)
+        client.clone(gitUrl)
 
         return "test"
     }

@@ -18,26 +18,17 @@ class GitNativeClient {
         private const val NEWLINE = "\n"
     }
 
-    fun connect(gitUrl: GitUrl) {
+    fun clone(gitUrl: GitUrl) {
         Socket(gitUrl.host, gitUrl.port).use { socket ->
             val input = DataInputStream(socket.inputStream)
             val output = DataOutputStream(socket.outputStream)
 
             sendRefDiscoveryRequest(output, gitUrl)
             val references = readRefDiscoveryResponse(input)
-            println(references)
 
-            // want f490f44a26417c31c44174e12fdbc5a53a761082 multi_ack side-band-64k thin-pack ofs-delta\n
-            val requiredCapabilities = references.first().capabilities?.filter { capability ->
-                when (capability) {
-                    "multi_ack", "side-band-64k", "thin-pack", "agent=git/2.34.1", "ofs-delta" -> true
-                    else -> false
-                }
-            }?.joinToString(" ")
+            sendWantRequest(output, references)
+            val packByteArray = readWantResponse(input)
 
-            val headShaWithCapabilities = references.first().sha + " $requiredCapabilities"
-            sendWantRequest(output, headShaWithCapabilities)
-            readWantResponse(input)
         }
     }
 
@@ -55,12 +46,23 @@ class GitNativeClient {
         output.flush()
     }
 
-    private fun sendWantRequest(output: DataOutputStream, headSha: String) {
+    private fun sendWantRequest(output: DataOutputStream, references: List<GitReference>) {
+
+        // want f490f44a26417c31c44174e12fdbc5a53a761082 multi_ack side-band-64k thin-pack ofs-delta\n
+        val requiredCapabilities = references.first().capabilities?.filter { capability ->
+            when (capability) {
+                "multi_ack", "side-band-64k", "thin-pack", "agent=git/2.34.1", "ofs-delta" -> true
+                else -> false
+            }
+        }?.joinToString(" ")
+
         val packet = buildString {
             append(createPacket {
                 append(GIT_WANT)
                     .append(" ")
-                    .append(headSha)
+                    .append(references.first().sha)
+                    .append(" ")
+                    .append(requiredCapabilities)
                     .append(NEWLINE)
             })
             append(FLUSH_PACKET)
@@ -81,7 +83,6 @@ class GitNativeClient {
         return "$hexLength$command"
     }
 
-
     private fun readWantResponse(input: DataInputStream): ByteArray {
         val packByteArrayOutput = ByteArrayOutputStream()
 
@@ -94,11 +95,11 @@ class GitNativeClient {
                 val data = input.readNBytes(length)
                 val channel = data[0]
 
-/*
-                PACK_DATA_CHANNEL: Byte = 0x01
-                PROGRESS_CHANNEL: Byte = 0x02
-                ERROR_CHANNEL: Byte = 0x03
-                                                    */
+                /*
+                                PACK_DATA_CHANNEL: Byte = 0x01
+                                PROGRESS_CHANNEL: Byte = 0x02
+                                ERROR_CHANNEL: Byte = 0x03
+                                                                    */
                 when (channel) {
                     0x01.toByte() -> {
                         // skip first byte
@@ -119,43 +120,34 @@ class GitNativeClient {
         return packByteArrayOutput.toByteArray()
     }
 
-    private fun readRefDiscoveryResponse(input: DataInputStream): List<GitReference> {
-        val responseBuilder = StringBuilder()
-
-        while (true) {
-            val lengthHex = input.readNBytes(4).toString(StandardCharsets.UTF_8)
-            if (lengthHex == FLUSH_PACKET) break
-
-            val length = lengthHex.toInt(16) - 4
-            if (length > 0) {
-                val responseData = input.readNBytes(length)
-                val response = responseData.toString(StandardCharsets.UTF_8)
-                responseBuilder.append(response)
-            }
-        }
-
-        if (responseBuilder.isEmpty()) {
-            return listOf()
-        }
-
-        return parseReferences(responseBuilder.toString())
-    }
-
     // f490f44a26417c31c44174e12fdbc5a53a761082 HEAD\u0000multi_ack thin-pack side-band side-band-64k ofs-delta shallow deepen-since deepen-not deepen-relative no-progress include-tag multi_ack_detailed symref=HEAD:refs/heads/master object-format=sha1 agent=git/2.34.1
     // f490f44a26417c31c44174e12fdbc5a53a761082 refs/heads/master
     // f490f44a26417c31c44174e12fdbc5a53a761082 refs/remotes/origin/master
-    private fun parseReferences(response: String): List<GitReference> {
-        return response.lines()
-            .filter { it.isNotEmpty() }
-            .map { line ->
-                val (sha, rest) = line.split(" ", limit = 2)
-                if (rest.contains(NUL_BYTE)) {
+    private fun readRefDiscoveryResponse(input: DataInputStream): List<GitReference> {
+        val references = mutableListOf<GitReference>()
+
+        while (true) {
+            val lengthHex = input.readNBytes(4).toString(StandardCharsets.UTF_8)
+            if (lengthHex == FLUSH_PACKET) {
+                break
+            }
+
+            val length = lengthHex.toInt(16) - 4
+            if (length > 0) {
+                val data = input.readNBytes(length)
+                val line = String(data, StandardCharsets.UTF_8)
+
+                if (line.contains(NUL_BYTE)) {
+                    val (sha, rest) = line.split(" ", limit = 2)
                     val (refName, capsString) = rest.split(NUL_BYTE, limit = 2)
                     val capabilities = capsString.split(" ")
-                    GitReference(sha, refName, capabilities)
+                    references.add(GitReference(sha, refName, capabilities))
                 } else {
-                    GitReference(sha, rest)
+                    val (sha, refName) = line.split(" ", limit = 2)
+                    references.add(GitReference(sha, refName))
                 }
             }
+        }
+        return references
     }
 }
