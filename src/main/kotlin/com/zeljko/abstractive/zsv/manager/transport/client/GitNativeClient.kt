@@ -2,6 +2,7 @@ package com.zeljko.abstractive.zsv.manager.transport.client
 
 import com.zeljko.abstractive.zsv.manager.transport.model.GitReference
 import com.zeljko.abstractive.zsv.manager.transport.model.GitUrl
+import java.io.ByteArrayOutputStream
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.net.Socket
@@ -23,12 +24,20 @@ class GitNativeClient {
             val output = DataOutputStream(socket.outputStream)
 
             sendRefDiscoveryRequest(output, gitUrl)
-            val references = readPacketReferenceResponse(input)
+            val references = readRefDiscoveryResponse(input)
             println(references)
 
-            val headSha = references.first().sha
-            sendWantRequest(output, headSha)
-            readPackFile(input)
+            // want f490f44a26417c31c44174e12fdbc5a53a761082 multi_ack side-band-64k thin-pack ofs-delta\n
+            val requiredCapabilities = references.first().capabilities?.filter { capability ->
+                when (capability) {
+                    "multi_ack", "side-band-64k", "thin-pack", "agent=git/2.34.1", "ofs-delta" -> true
+                    else -> false
+                }
+            }?.joinToString(" ")
+
+            val headShaWithCapabilities = references.first().sha + " $requiredCapabilities"
+            sendWantRequest(output, headShaWithCapabilities)
+            readWantResponse(input)
         }
     }
 
@@ -68,15 +77,49 @@ class GitNativeClient {
         val command = buildString(buildCommand)
         val length = command.length + 4
         val hexLength = String.format("%04x", length)
+        println("$hexLength$command")
         return "$hexLength$command"
     }
 
 
-    private fun readPackFile(input: DataInputStream) {
-        // TODO:  Read objects
+    private fun readWantResponse(input: DataInputStream): ByteArray {
+        val packByteArrayOutput = ByteArrayOutputStream()
+
+        while (true) {
+            val lengthHex = input.readNBytes(4).toString(StandardCharsets.UTF_8)
+            if (lengthHex == FLUSH_PACKET) break
+
+            val length = lengthHex.toInt(16) - 4
+            if (length > 0) {
+                val data = input.readNBytes(length)
+                val channel = data[0]
+
+/*
+                PACK_DATA_CHANNEL: Byte = 0x01
+                PROGRESS_CHANNEL: Byte = 0x02
+                ERROR_CHANNEL: Byte = 0x03
+                                                    */
+                when (channel) {
+                    0x01.toByte() -> {
+                        // skip first byte
+                        packByteArrayOutput.write(data, 1, data.size - 1)
+                    }
+
+                    0x02.toByte() -> {
+                        println("Progress: ${String(data, 1, data.size - 1)}")
+                    }
+
+                    0x03.toByte() -> {
+                        println("Error: ${String(data, 1, data.size - 1)}")
+                    }
+                }
+            }
+        }
+
+        return packByteArrayOutput.toByteArray()
     }
 
-    private fun readPacketReferenceResponse(input: DataInputStream): List<GitReference> {
+    private fun readRefDiscoveryResponse(input: DataInputStream): List<GitReference> {
         val responseBuilder = StringBuilder()
 
         while (true) {
