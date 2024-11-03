@@ -1,16 +1,12 @@
 package com.zeljko.abstractive.zsv.manager.utils
 
+import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.io.DataInputStream
 import java.security.MessageDigest
 import java.util.zip.Deflater
 import java.util.zip.Inflater
 
-
-/**
- * Decompress a byte array using ZLIB.
- *
- * @return an byte array.
- */
 fun ByteArray.zlibDecompress(): ByteArray {
     val inflater = Inflater()
     val outputStream = ByteArrayOutputStream()
@@ -31,12 +27,29 @@ fun ByteArray.zlibDecompress(): ByteArray {
     }
 }
 
+fun DataInputStream.zlibDecompress(size: Int): Pair<ByteArray, DataInputStream> {
+    val remainingBytesBeforeDecompression = this.available()
+    val inflater = Inflater()
 
-/**
- * Compress a string using ZLIB.
- *
- * @return an UTF-8 encoded byte array.
- */
+    val compressed = this.readAllBytes()
+    inflater.setInput(compressed)
+
+    val decompressed = ByteArray(size)
+    inflater.inflate(decompressed)
+
+    val unusedBytesCount = remainingBytesBeforeDecompression - inflater.totalIn
+    val newInput = if (unusedBytesCount > 0) {
+        DataInputStream(ByteArrayInputStream(
+            compressed.sliceArray(inflater.totalIn until compressed.size)
+        ))
+    } else {
+        this
+    }
+
+    inflater.end()
+    return Pair(decompressed, newInput)
+}
+
 fun String.zlibCompress(): ByteArray {
     val input = this.toByteArray(charset("UTF-8"))
 
@@ -52,11 +65,6 @@ fun String.zlibCompress(): ByteArray {
 }
 
 
-/**
- * Compress a ByteArray using ZLIB.
- *
- * @return a compressed ByteArray.
- */
 fun ByteArray.zlibCompress(): ByteArray {
     val output = ByteArray(this.size * 2)
     val compressor = Deflater().apply {
@@ -68,9 +76,6 @@ fun ByteArray.zlibCompress(): ByteArray {
 }
 
 
-/**
- * Encrypt String to SHA1 format
- */
 fun String.toSha1(): String {
     return MessageDigest
         .getInstance("SHA-1")
@@ -79,11 +84,6 @@ fun String.toSha1(): String {
 }
 
 
-/**
- * Calculate SHA1 hash of a ByteArray
- *
- * @return SHA1 hash as a String
- */
 fun ByteArray.toSha1(): String {
     return MessageDigest
         .getInstance("SHA-1")

@@ -33,7 +33,7 @@ class BlobService {
         )
     }
 
-    fun compressFileToBlobObject(write: Boolean, path: Path): String {
+    fun createBlobFromPath(write: Boolean, path: Path): String {
         val fileContent = Files.readAllBytes(path)
 
         val blobHeader = "blob ${fileContent.size}\u0000".toByteArray(Charsets.UTF_8)
@@ -55,6 +55,27 @@ class BlobService {
             val objectsDirectory = currentDirectory.resolve(".git/objects")
             storeObject(objectsDirectory, blob.blobSha, blob.content)
         }
+
+        return blob.blobSha
+    }
+
+
+    fun createBlobFromContent(repositoryPath: Path, content: ByteArray): String {
+
+        val blobHeader = "blob ${content.size}\u0000".toByteArray(Charsets.UTF_8)
+        val fullContent = blobHeader + content
+        val compressedContent = fullContent.zlibCompress()
+
+        // create blob name
+        val blobNameSHA1 = fullContent.toSha1()
+
+        val blob = Blob(
+            content = compressedContent,
+            blobSha = blobNameSHA1
+        )
+
+        val objectsDirectory = repositoryPath.resolve(".git/objects")
+        storeObject(objectsDirectory, blob.blobSha, blob.content)
 
         return blob.blobSha
     }

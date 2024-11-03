@@ -33,15 +33,6 @@ class CommitService(
      * 4. Update HEAD: git reset --hard b4ffac0fc29939a6ba99fe5a15fc5cfb270ac4cb
      * 5. Verify: git log
      */
-
-    /**
-     * Creates a new commit object.
-     *
-     * @param message The commit message
-     * @param treeSha The SHA of the tree object this commit points to
-     * @param parentSha The SHA of the parent commit (optional)
-     * @return The SHA of the created commit
-     */
     fun commitTree(message: String, treeSha: String, parentSha: String): String {
         val commitBuilder = StringBuilder()
 

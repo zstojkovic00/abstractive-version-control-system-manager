@@ -31,7 +31,7 @@ class BlobCommands(private val blobService: BlobService) {
     ): String {
 
         val path = Paths.get(fileToCompress)
-        return blobService.compressFileToBlobObject(write, path)
+        return blobService.createBlobFromPath(write, path)
     }
 
 }

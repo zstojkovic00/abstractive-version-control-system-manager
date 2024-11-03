@@ -48,7 +48,7 @@ class TreeService(private val blobService: BlobService) {
                         val treeSha = compressTreeObject(file)
                         objects.add(Tree(DIRECTORY.mode, name, treeSha))
                     } else {
-                        val blobSha = blobService.compressFileToBlobObject(true, file)
+                        val blobSha = blobService.createBlobFromPath(true, file)
                         val fileMode = when {
                             Files.isExecutable(file) -> EXECUTABLE_FILE
                             // TODO: fix -> Seems like compressFileToBlobObject for symbolic link is not working well

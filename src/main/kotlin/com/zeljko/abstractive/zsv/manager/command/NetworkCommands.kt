@@ -7,7 +7,7 @@ import org.springframework.shell.command.annotation.Option
 
 
 @Command(command = ["zsv"], description = "Zsv commands")
-class NetworkCommands {
+class NetworkCommands(private val gitClient: GitNativeClient) {
 
     // zsv clone git://127.0.0.1/test-repo
     @Command(command = ["clone"], description = "Clone remote repository from git server")
@@ -25,8 +25,7 @@ class NetworkCommands {
             path = "/${parts[1]}"
         )
 
-        val client = GitNativeClient()
-        client.clone(gitUrl)
+        gitClient.clone(gitUrl)
 
         return "test"
     }

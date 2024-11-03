@@ -1,17 +1,28 @@
 package com.zeljko.abstractive.zsv.manager.transport.client
 
+import com.zeljko.abstractive.zsv.manager.core.services.BlobService
+import com.zeljko.abstractive.zsv.manager.transport.model.GitObjectType
 import com.zeljko.abstractive.zsv.manager.transport.model.GitReference
 import com.zeljko.abstractive.zsv.manager.transport.model.GitUrl
 import com.zeljko.abstractive.zsv.manager.utils.zlibDecompress
+import com.zeljko.abstractive.zsv.manager.transport.model.GitObjectType.*
+import org.springframework.stereotype.Component
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.net.Socket
 import java.nio.charset.StandardCharsets
-import java.util.zip.Inflater
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
 
-class GitNativeClient {
+@Component
+class GitNativeClient(
+    private val blobService: BlobService,
+    private val treeService: BlobService,
+    private val commitService: BlobService
+) {
     companion object {
         private const val FLUSH_PACKET = "0000"
         private const val NUL_BYTE = '\u0000'
@@ -22,6 +33,9 @@ class GitNativeClient {
     }
 
     fun clone(gitUrl: GitUrl) {
+        val repositoryName = "zeljko/" + gitUrl.path.substringAfterLast("/")
+        val repositoryPath = Paths.get(repositoryName)
+
         Socket(gitUrl.host, gitUrl.port).use { socket ->
             val input = DataInputStream(socket.inputStream)
             val output = DataOutputStream(socket.outputStream)
@@ -32,12 +46,27 @@ class GitNativeClient {
 
             sendWantRequest(output, references)
             val packByteArray = readWantResponse(input)
-            parsePack(packByteArray);
 
+            createGitStructure(repositoryPath)
+            parsePack(packByteArray, repositoryPath);
         }
     }
 
-    private fun parsePack(packByteArray: ByteArray) {
+    private fun createGitStructure(repositoryPath: Path) {
+        Files.createDirectories(repositoryPath)
+
+        val gitDirectory = repositoryPath.resolve(".git")
+        Files.createDirectories(gitDirectory)
+
+        listOf("objects", "refs/heads", "refs/tags", "info", "hooks")
+            .forEach {
+                Files.createDirectories(gitDirectory.resolve(it))
+            }
+
+        Files.writeString(gitDirectory.resolve("HEAD"), "ref: refs/heads/master\n")
+    }
+
+    private fun parsePack(packByteArray: ByteArray, repositoryPath: Path) {
         var input = DataInputStream(ByteArrayInputStream(packByteArray))
         val magicByte = input.readNBytes(4).toString(StandardCharsets.UTF_8);
 
@@ -53,12 +82,17 @@ class GitNativeClient {
 
         for (n in 1..nObjects) {
             val byte = input.read() and 0xFF
+            // Extract object type from the first byte:
+            // Shift right by 4 to get first 3 bits and mask with 7 (0111) to get type
             val type = (byte shr 4) and 7
             println("Object type code $type")
 
+            // Extract initial size from remaining 4 bits of first byte
             var size = byte and 15
             var shift = 4
 
+            // Read variable-length size encoding:
+            // While MSB (Most Significant Bit) is 1, continue reading size bytes
             var currentByte = byte
             while ((currentByte and 0x80) != 0) {
                 currentByte = input.read() and 0xFF
@@ -68,33 +102,45 @@ class GitNativeClient {
 
             println("Object size: $size")
 
-            // git is giving us size of object when is decompressed not compressed :/
-            when (type) {
-                1, 2, 3, 4 -> {
-                    val remainingBytesBeforeDecompression = input.available()
-                    val inflater = Inflater()
-
-                    val compressed = input.readAllBytes()
-                    inflater.setInput(compressed)
-
-                    val decompressed = ByteArray(size)
-                    inflater.inflate(decompressed)
-
-                    val unusedBytesCount = remainingBytesBeforeDecompression - inflater.totalIn
-
-                    if (unusedBytesCount > 0) {
-                        input = DataInputStream(ByteArrayInputStream(compressed.sliceArray(inflater.totalIn until compressed.size)))
-                    }
-
+            /*
+             Git sends objects one after another in format: [Header1][Object1][Header2][Object2]..[HeaderN][ObjectN]
+             We need to keep track of position in stream and reset it to the beginning of next object after we finish decompressing current one
+             */
+            when (val objectType = GitObjectType.fromType(type)) {
+                COMMIT, TREE, BLOB, TAG -> {
+                    val (decompressed, newInput) = input.zlibDecompress(size)
+                    input = newInput
                     println(decompressed.toString(StandardCharsets.UTF_8))
-                    inflater.end()
+                    writeToGit(repositoryPath, objectType, decompressed)
+//                    writeToDisk()
                 }
 
-                6, 7 -> {
-                    println("FOUND REF_DELTA OR OFS_DELTA")
-                }
-
+                OFS_DELTA -> TODO()
+                REF_DELTA -> TODO()
             }
+        }
+    }
+
+//    private fun writeToDisk() {
+//        TODO("Not yet implemented")
+//    }
+
+    private fun writeToGit(repositoryPath: Path, type: GitObjectType, decompressedContent: ByteArray) {
+        when (type) {
+            BLOB -> {
+                val blobSha = blobService.createBlobFromContent(repositoryPath, decompressedContent)
+                println("Stored blob: $blobSha")
+            }
+
+            COMMIT -> {
+                println("Found commit, processing later")
+            }
+            TREE -> {
+                println("Found tree, processing later")
+            }
+            TAG -> TODO()
+            OFS_DELTA -> TODO()
+            REF_DELTA -> TODO()
         }
     }
 
@@ -191,8 +237,8 @@ class GitNativeClient {
     }
 
     // f490f44a26417c31c44174e12fdbc5a53a761082 HEAD\u0000multi_ack thin-pack side-band side-band-64k ofs-delta shallow deepen-since deepen-not deepen-relative no-progress include-tag multi_ack_detailed symref=HEAD:refs/heads/master object-format=sha1 agent=git/2.34.1
-// f490f44a26417c31c44174e12fdbc5a53a761082 refs/heads/master
-// f490f44a26417c31c44174e12fdbc5a53a761082 refs/remotes/origin/master
+    // f490f44a26417c31c44174e12fdbc5a53a761082 refs/heads/master
+    // f490f44a26417c31c44174e12fdbc5a53a761082 refs/remotes/origin/master
     private fun readRefDiscoveryResponse(input: DataInputStream): List<GitReference> {
         val references = mutableListOf<GitReference>()
 
