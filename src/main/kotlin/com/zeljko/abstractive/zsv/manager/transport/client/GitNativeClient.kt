@@ -9,6 +9,7 @@ import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.net.Socket
 import java.nio.charset.StandardCharsets
+import java.util.zip.Inflater
 
 class GitNativeClient {
     companion object {
@@ -27,6 +28,7 @@ class GitNativeClient {
 
             sendRefDiscoveryRequest(output, gitUrl)
             val references = readRefDiscoveryResponse(input)
+            println("References: $references")
 
             sendWantRequest(output, references)
             val packByteArray = readWantResponse(input)
@@ -36,7 +38,7 @@ class GitNativeClient {
     }
 
     private fun parsePack(packByteArray: ByteArray) {
-        val input = DataInputStream(ByteArrayInputStream(packByteArray))
+        var input = DataInputStream(ByteArrayInputStream(packByteArray))
         val magicByte = input.readNBytes(4).toString(StandardCharsets.UTF_8);
 
         if (magicByte != "PACK") {
@@ -49,47 +51,51 @@ class GitNativeClient {
         println("Pack file version: $version")
         println("Number of git objects: $nObjects")
 
-        for (i in 1..nObjects) {
-            // reading one byte (8 bits)
-            val objectHeader = input.read()
-
-            // take first 3 bits by shifting right 4
-            val type = (objectHeader shr 4) and 7
-            /*
-                OBJ_COMMIT = 1
-                OBJ_TREE = 2
-                OBJ_BLOB = 3
-                OBJ_TAG = 4
-                OBJ_OFS_DELTA = 6
-                OBJ_REF_DELTA = 7
-             */
+        for (n in 1..nObjects) {
+            val byte = input.read() and 0xFF
+            val type = (byte shr 4) and 7
             println("Object type code $type")
 
-            // take last 4 bits by masking with 15
-            // partial size if the MSB is set and more bytes need to be read
-            var size = objectHeader and 15
+            var size = byte and 15
             var shift = 4
-            var currentByte = objectHeader
 
-            while (currentByte and 0x80 != 0) {
-                currentByte = input.read()
-                // take last 7 bits (0111 1111 = 0x7F)
-                val add = (currentByte) and 0x7F
-                size += add shl shift
+            var currentByte = byte
+            while ((currentByte and 0x80) != 0) {
+                currentByte = input.read() and 0xFF
+                size += (currentByte and 0x7F) shl shift
                 shift += 7
             }
-            println("Object size $size")
 
-            // git is giving us size of decompressed file not compressed
+            println("Object size: $size")
+
+            // git is giving us size of object when is decompressed not compressed :/
             when (type) {
-                1, 2, 3 -> {
-                    val decompressedData = input.readNBytes(size).zlibDecompress()
-                    println(decompressedData.toString(StandardCharsets.UTF_8))
+                1, 2, 3, 4 -> {
+                    val remainingBytesBeforeDecompression = input.available()
+                    val inflater = Inflater()
+
+                    val compressed = input.readAllBytes()
+                    inflater.setInput(compressed)
+
+                    val decompressed = ByteArray(size)
+                    inflater.inflate(decompressed)
+
+                    val unusedBytesCount = remainingBytesBeforeDecompression - inflater.totalIn
+
+                    if (unusedBytesCount > 0) {
+                        input = DataInputStream(ByteArrayInputStream(compressed.sliceArray(inflater.totalIn until compressed.size)))
+                    }
+
+                    println(decompressed.toString(StandardCharsets.UTF_8))
+                    inflater.end()
                 }
+
+                6, 7 -> {
+                    println("FOUND REF_DELTA OR OFS_DELTA")
+                }
+
             }
-
         }
-
     }
 
 
@@ -119,6 +125,7 @@ class GitNativeClient {
         // 005ewant 6d275e323ac3397b78002f28fb2bb8e291b0b795 multi_ack thin-pack side-band-64k ofs-delta
         // FLUSH_PACKET
         // 0009done
+        // TODO: send want command for every reference
         val packet = buildString {
             append(createPacket {
                 append(GIT_WANT)
@@ -184,8 +191,8 @@ class GitNativeClient {
     }
 
     // f490f44a26417c31c44174e12fdbc5a53a761082 HEAD\u0000multi_ack thin-pack side-band side-band-64k ofs-delta shallow deepen-since deepen-not deepen-relative no-progress include-tag multi_ack_detailed symref=HEAD:refs/heads/master object-format=sha1 agent=git/2.34.1
-    // f490f44a26417c31c44174e12fdbc5a53a761082 refs/heads/master
-    // f490f44a26417c31c44174e12fdbc5a53a761082 refs/remotes/origin/master
+// f490f44a26417c31c44174e12fdbc5a53a761082 refs/heads/master
+// f490f44a26417c31c44174e12fdbc5a53a761082 refs/remotes/origin/master
     private fun readRefDiscoveryResponse(input: DataInputStream): List<GitReference> {
         val references = mutableListOf<GitReference>()
 
