@@ -2,6 +2,8 @@ package com.zeljko.abstractive.zsv.manager.transport.client
 
 import com.zeljko.abstractive.zsv.manager.transport.model.GitReference
 import com.zeljko.abstractive.zsv.manager.transport.model.GitUrl
+import com.zeljko.abstractive.zsv.manager.utils.zlibDecompress
+import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.DataInputStream
 import java.io.DataOutputStream
@@ -28,11 +30,71 @@ class GitNativeClient {
 
             sendWantRequest(output, references)
             val packByteArray = readWantResponse(input)
+            parsePack(packByteArray);
 
         }
     }
 
+    private fun parsePack(packByteArray: ByteArray) {
+        val input = DataInputStream(ByteArrayInputStream(packByteArray))
+        val magicByte = input.readNBytes(4).toString(StandardCharsets.UTF_8);
+
+        if (magicByte != "PACK") {
+            throw IllegalStateException("Something is not right, missing PACK signature :)")
+        }
+
+        val version = input.readInt()
+        val nObjects = input.readInt()
+
+        println("Pack file version: $version")
+        println("Number of git objects: $nObjects")
+
+        for (i in 1..nObjects) {
+            // reading one byte (8 bits)
+            val objectHeader = input.read()
+
+            // take first 3 bits by shifting right 4
+            val type = (objectHeader shr 4) and 7
+            /*
+                OBJ_COMMIT = 1
+                OBJ_TREE = 2
+                OBJ_BLOB = 3
+                OBJ_TAG = 4
+                OBJ_OFS_DELTA = 6
+                OBJ_REF_DELTA = 7
+             */
+            println("Object type code $type")
+
+            // take last 4 bits by masking with 15
+            // partial size if the MSB is set and more bytes need to be read
+            var size = objectHeader and 15
+            var shift = 4
+            var currentByte = objectHeader
+
+            while (currentByte and 0x80 != 0) {
+                currentByte = input.read()
+                // take last 7 bits (0111 1111 = 0x7F)
+                val add = (currentByte) and 0x7F
+                size += add shl shift
+                shift += 7
+            }
+            println("Object size $size")
+
+            // git is giving us size of decompressed file not compressed
+            when (type) {
+                1, 2, 3 -> {
+                    val decompressedData = input.readNBytes(size).zlibDecompress()
+                    println(decompressedData.toString(StandardCharsets.UTF_8))
+                }
+            }
+
+        }
+
+    }
+
+
     private fun sendRefDiscoveryRequest(output: DataOutputStream, gitUrl: GitUrl) {
+        // 002egit-upload-pack /test-repohost=127.0.0.1
         val packet = createPacket {
             append(GIT_UPLOAD_PACK)
                 .append(" ")
@@ -47,8 +109,6 @@ class GitNativeClient {
     }
 
     private fun sendWantRequest(output: DataOutputStream, references: List<GitReference>) {
-
-        // want f490f44a26417c31c44174e12fdbc5a53a761082 multi_ack side-band-64k thin-pack ofs-delta\n
         val requiredCapabilities = references.first().capabilities?.filter { capability ->
             when (capability) {
                 "multi_ack", "side-band-64k", "thin-pack", "agent=git/2.34.1", "ofs-delta" -> true
@@ -56,6 +116,9 @@ class GitNativeClient {
             }
         }?.joinToString(" ")
 
+        // 005ewant 6d275e323ac3397b78002f28fb2bb8e291b0b795 multi_ack thin-pack side-band-64k ofs-delta
+        // FLUSH_PACKET
+        // 0009done
         val packet = buildString {
             append(createPacket {
                 append(GIT_WANT)
