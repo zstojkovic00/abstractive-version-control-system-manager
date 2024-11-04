@@ -3,11 +3,8 @@ package com.zeljko.abstractive.zsv.manager.command
 import com.zeljko.abstractive.zsv.manager.core.services.TreeService
 import org.springframework.shell.command.annotation.Command
 import org.springframework.shell.command.annotation.Option
-import org.springframework.stereotype.Component
 import java.nio.file.Paths
 
-
-@Component
 @Command(command = ["zsv"], description = "Zsv commands")
 class TreeCommands(private val treeService: TreeService) {
 
@@ -18,7 +15,7 @@ class TreeCommands(private val treeService: TreeService) {
         @Option(shortNames = ['f'], required = true, description = "Path to directory you want to decompress") treeSha: String
     ): String {
 
-        val trees = treeService.decompressTreeObject(nameOnly, treeSha)
+        val trees = treeService.decompress(nameOnly, treeSha)
         return if (nameOnly) {
             trees.joinToString("\n") { it.fileName }
         } else {
@@ -30,6 +27,6 @@ class TreeCommands(private val treeService: TreeService) {
     // git write-tree -> 5f4a3b5cec8f56436aef85c2304c5a02b5675c2e
     @Command(command = ["write-tree"], description = "Create tree object")
     fun compressTreeObject(): String {
-        return treeService.compressTreeObject(Paths.get("").toAbsolutePath())
+        return treeService.compressFromFile(Paths.get("").toAbsolutePath())
     }
 }

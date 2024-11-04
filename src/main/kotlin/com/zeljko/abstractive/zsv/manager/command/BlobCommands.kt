@@ -3,11 +3,8 @@ package com.zeljko.abstractive.zsv.manager.command
 import com.zeljko.abstractive.zsv.manager.core.services.BlobService
 import org.springframework.shell.command.annotation.Command
 import org.springframework.shell.command.annotation.Option
-import org.springframework.stereotype.Component
 import java.nio.file.Paths
 
-
-@Component
 @Command(command = ["zsv"], description = "Zsv commands")
 class BlobCommands(private val blobService: BlobService) {
 
@@ -16,7 +13,7 @@ class BlobCommands(private val blobService: BlobService) {
     fun decompressBlobObject(
         @Option(shortNames = ['f'], required = true, description = "Path to the file to decompress") blobSha: String
     ): String {
-        val blob = blobService.decompressBlobObject(blobSha).toString()
+        val blob = blobService.decompress(blobSha).toString()
 
 
         // remove header (blob content.length)
@@ -31,7 +28,7 @@ class BlobCommands(private val blobService: BlobService) {
     ): String {
 
         val path = Paths.get(fileToCompress)
-        return blobService.createBlobFromPath(write, path)
+        return blobService.compressFromFile(write, path)
     }
 
 }

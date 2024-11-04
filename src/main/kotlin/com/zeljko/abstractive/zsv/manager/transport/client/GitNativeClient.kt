@@ -1,6 +1,8 @@
 package com.zeljko.abstractive.zsv.manager.transport.client
 
 import com.zeljko.abstractive.zsv.manager.core.services.BlobService
+import com.zeljko.abstractive.zsv.manager.core.services.CommitService
+import com.zeljko.abstractive.zsv.manager.core.services.TreeService
 import com.zeljko.abstractive.zsv.manager.transport.model.GitObjectType
 import com.zeljko.abstractive.zsv.manager.transport.model.GitReference
 import com.zeljko.abstractive.zsv.manager.transport.model.GitUrl
@@ -20,8 +22,8 @@ import java.nio.file.Paths
 @Component
 class GitNativeClient(
     private val blobService: BlobService,
-    private val treeService: BlobService,
-    private val commitService: BlobService
+    private val treeService: TreeService,
+    private val commitService: CommitService
 ) {
     companion object {
         private const val FLUSH_PACKET = "0000"
@@ -102,45 +104,35 @@ class GitNativeClient(
 
             println("Object size: $size")
 
+
             /*
              Git sends objects one after another in format: [Header1][Object1][Header2][Object2]..[HeaderN][ObjectN]
              We need to keep track of position in stream and reset it to the beginning of next object after we finish decompressing current one
              */
-            when (val objectType = GitObjectType.fromType(type)) {
-                COMMIT, TREE, BLOB, TAG -> {
-                    val (decompressed, newInput) = input.zlibDecompress(size)
-                    input = newInput
+            val (decompressed, newInput) = input.zlibDecompress(size)
+            input = newInput
+
+            when (GitObjectType.fromType(type)) {
+                BLOB -> {
+                    blobService.compressFromContent(repositoryPath, decompressed)
                     println(decompressed.toString(StandardCharsets.UTF_8))
-                    writeToGit(repositoryPath, objectType, decompressed)
-//                    writeToDisk()
                 }
 
+                COMMIT -> {
+                    println(decompressed.toString(StandardCharsets.UTF_8))
+                    commitService.compressFromContent(repositoryPath, decompressed)
+                }
+
+                TREE -> {
+                    println(decompressed.toString(StandardCharsets.UTF_8))
+                    treeService.compressFromContent(repositoryPath, decompressed)
+                    treeService.extractToDisk(repositoryPath, decompressed)
+                }
+
+                TAG -> TODO()
                 OFS_DELTA -> TODO()
                 REF_DELTA -> TODO()
             }
-        }
-    }
-
-//    private fun writeToDisk() {
-//        TODO("Not yet implemented")
-//    }
-
-    private fun writeToGit(repositoryPath: Path, type: GitObjectType, decompressedContent: ByteArray) {
-        when (type) {
-            BLOB -> {
-                val blobSha = blobService.createBlobFromContent(repositoryPath, decompressedContent)
-                println("Stored blob: $blobSha")
-            }
-
-            COMMIT -> {
-                println("Found commit, processing later")
-            }
-            TREE -> {
-                println("Found tree, processing later")
-            }
-            TAG -> TODO()
-            OFS_DELTA -> TODO()
-            REF_DELTA -> TODO()
         }
     }
 

@@ -14,9 +14,8 @@ import java.nio.file.Paths
 
 
 @Service
-@Command(command = ["zsv"], description = "Zsv commands")
 class TreeService(private val blobService: BlobService) {
-    fun decompressTreeObject(nameOnly: Boolean, treeSha: String): List<Tree> {
+    fun decompress(nameOnly: Boolean, treeSha: String): List<Tree> {
 
         val path = getObjectShaPath(treeSha)
         val compressedContent = Files.readAllBytes(path)
@@ -31,7 +30,7 @@ class TreeService(private val blobService: BlobService) {
         return parseTreeContent(decompressedContent)
     }
 
-    fun compressTreeObject(path: Path): String {
+    fun compressFromFile(path: Path): String {
         // TODO: .gitignore
         val ignoredItems = setOf(".zsv", ".git", ".gradle", ".idea", "build", "HELP.md",
             "abstractive-version-control-system-manager.log")
@@ -45,10 +44,10 @@ class TreeService(private val blobService: BlobService) {
                 .forEach { file ->
                     val name = file.fileName.toString()
                     if (Files.isDirectory(file)) {
-                        val treeSha = compressTreeObject(file)
+                        val treeSha = compressFromFile(file)
                         objects.add(Tree(DIRECTORY.mode, name, treeSha))
                     } else {
-                        val blobSha = blobService.createBlobFromPath(true, file)
+                        val blobSha = blobService.compressFromFile(true, file)
                         val fileMode = when {
                             Files.isExecutable(file) -> EXECUTABLE_FILE
                             // TODO: fix -> Seems like compressFileToBlobObject for symbolic link is not working well
@@ -62,6 +61,18 @@ class TreeService(private val blobService: BlobService) {
                 }
         }
         return storeTree(objects)
+    }
+
+    fun compressFromContent(repositoryPath: Path, decompressedContent: ByteArray): String {
+        val treeHeader = "tree ${decompressedContent.size}\u0000".toByteArray()
+        val content = treeHeader + decompressedContent
+
+        val compressedContent = content.zlibCompress()
+        val treeSha = content.toSha1()
+
+        val objectsDirectory = repositoryPath.resolve(".git/objects")
+        storeObject(objectsDirectory, treeSha, compressedContent)
+        return treeSha
     }
 
     private fun storeTree(objects: List<Tree>): String {
@@ -118,4 +129,11 @@ class TreeService(private val blobService: BlobService) {
         }
         return result
     }
+
+    fun extractToDisk(repositoryPath: Path, decompressed: ByteArray) {
+        val trees = parseTreeContent(decompressed)
+        println("Trees: $trees")
+    }
+
+
 }

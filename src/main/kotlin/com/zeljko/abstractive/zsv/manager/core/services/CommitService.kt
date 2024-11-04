@@ -6,6 +6,7 @@ import com.zeljko.abstractive.zsv.manager.utils.FileUtils.updateCurrentHead
 import com.zeljko.abstractive.zsv.manager.utils.toSha1
 import com.zeljko.abstractive.zsv.manager.utils.zlibCompress
 import org.springframework.stereotype.Service
+import java.nio.file.Path
 import java.nio.file.Paths
 
 @Service
@@ -33,7 +34,7 @@ class CommitService(
      * 4. Update HEAD: git reset --hard b4ffac0fc29939a6ba99fe5a15fc5cfb270ac4cb
      * 5. Verify: git log
      */
-    fun commitTree(message: String, treeSha: String, parentSha: String): String {
+    fun compressFromMessage(message: String, treeSha: String, parentSha: String): String {
         val commitBuilder = StringBuilder()
 
         commitBuilder.append("tree $treeSha\n")
@@ -67,14 +68,25 @@ class CommitService(
     }
 
     fun commit(message: String): String {
-
-        val treeSha = treeService.compressTreeObject(Paths.get("").toAbsolutePath())
+        val treeSha = treeService.compressFromFile(Paths.get("").toAbsolutePath())
         val parentSha = getCurrentHead()
-        val commitSha = commitTree(message, treeSha, parentSha)
+        val commitSha = compressFromMessage(message, treeSha, parentSha)
 
         // update HEAD
         updateCurrentHead(commitSha)
 
+        return commitSha
+    }
+
+    fun compressFromContent(repositoryPath: Path, decompressedContent: ByteArray): Any {
+        val commitHeader = "commit ${decompressedContent.size}\u0000".toByteArray()
+        val content = commitHeader + decompressedContent
+
+        val compressedContent = content.zlibCompress()
+        val commitSha = content.toSha1()
+
+        val objectsDirectory = repositoryPath.resolve(".git/objects")
+        storeObject(objectsDirectory, commitSha, compressedContent)
         return commitSha
     }
 }

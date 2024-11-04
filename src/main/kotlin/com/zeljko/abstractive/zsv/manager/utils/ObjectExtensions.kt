@@ -83,7 +83,6 @@ fun String.toSha1(): String {
         .joinToString(separator = "", transform = { "%02x".format(it) })
 }
 
-
 fun ByteArray.toSha1(): String {
     return MessageDigest
         .getInstance("SHA-1")
