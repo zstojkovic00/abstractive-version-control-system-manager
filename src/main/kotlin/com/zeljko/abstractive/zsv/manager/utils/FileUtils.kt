@@ -7,14 +7,13 @@ import java.nio.file.Paths
 
 object FileUtils {
 
-    fun getObjectShaPath(objectSha: String): Path {
-
-        val path = Paths.get(".git/objects/${objectSha.substring(0, 2)}/${objectSha.substring(2)}")
+    fun getObjectShaPath(path: Path, objectSha: String): Path {
+        val repositoryPath = path.resolve(".git/objects/${objectSha.substring(0, 2)}/${objectSha.substring(2)}")
 
         if (!Files.exists(path)) {
             throw ObjectNotFoundException("Object not found.")
         }
-        return path
+        return repositoryPath
     }
 
     fun storeObject(directory: Path, objectSha: String, compressedContent: ByteArray) {
@@ -24,6 +23,9 @@ object FileUtils {
         Files.write(blobFile, compressedContent)
     }
 
+    fun getCurrentPath(): Path {
+        return Paths.get("").toAbsolutePath()
+    }
 
     fun getCurrentHead(): String {
         val headDirectory = Paths.get(".git/HEAD")

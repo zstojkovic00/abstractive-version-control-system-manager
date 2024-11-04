@@ -71,6 +71,7 @@ class GitNativeClient(
     private fun parsePack(packByteArray: ByteArray, repositoryPath: Path) {
         var input = DataInputStream(ByteArrayInputStream(packByteArray))
         val magicByte = input.readNBytes(4).toString(StandardCharsets.UTF_8);
+        var latestTreeSha: String? = null
 
         if (magicByte != "PACK") {
             throw IllegalStateException("Something is not right, missing PACK signature :)")
@@ -78,9 +79,9 @@ class GitNativeClient(
 
         val version = input.readInt()
         val nObjects = input.readInt()
-
         println("Pack file version: $version")
         println("Number of git objects: $nObjects")
+
 
         for (n in 1..nObjects) {
             val byte = input.read() and 0xFF
@@ -101,7 +102,6 @@ class GitNativeClient(
                 size += (currentByte and 0x7F) shl shift
                 shift += 7
             }
-
             println("Object size: $size")
 
 
@@ -114,25 +114,33 @@ class GitNativeClient(
 
             when (GitObjectType.fromType(type)) {
                 BLOB -> {
-                    blobService.compressFromContent(repositoryPath, decompressed)
+                    blobService.compressFromContent(decompressed, repositoryPath)
                     println(decompressed.toString(StandardCharsets.UTF_8))
                 }
 
                 COMMIT -> {
+                    if (latestTreeSha == null) {
+                        latestTreeSha = commitService.parseCommit(decompressed.toString(StandardCharsets.UTF_8)).treeSha
+                    }
+                    commitService.compressFromContent(decompressed, repositoryPath)
                     println(decompressed.toString(StandardCharsets.UTF_8))
-                    commitService.compressFromContent(repositoryPath, decompressed)
                 }
 
                 TREE -> {
-                    println(decompressed.toString(StandardCharsets.UTF_8))
                     treeService.compressFromContent(repositoryPath, decompressed)
-                    treeService.extractToDisk(repositoryPath, decompressed)
+                    println(decompressed.toString(StandardCharsets.UTF_8))
                 }
 
                 TAG -> TODO()
                 OFS_DELTA -> TODO()
                 REF_DELTA -> TODO()
             }
+        }
+
+        if (latestTreeSha != null) {
+            val rootTreeContent = treeService.getDecompressedTreeContent(latestTreeSha, repositoryPath)
+            println("Extracting files from root tree: $latestTreeSha")
+            treeService.extractToDisk(rootTreeContent, latestTreeSha, repositoryPath, repositoryPath)
         }
     }
 

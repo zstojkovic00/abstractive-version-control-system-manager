@@ -1,6 +1,7 @@
 package com.zeljko.abstractive.zsv.manager.command
 
 import com.zeljko.abstractive.zsv.manager.core.services.BlobService
+import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getCurrentPath
 import org.springframework.shell.command.annotation.Command
 import org.springframework.shell.command.annotation.Option
 import java.nio.file.Paths
@@ -13,7 +14,7 @@ class BlobCommands(private val blobService: BlobService) {
     fun decompressBlobObject(
         @Option(shortNames = ['f'], required = true, description = "Path to the file to decompress") blobSha: String
     ): String {
-        val blob = blobService.decompress(blobSha).toString()
+        val blob = blobService.decompress(blobSha, getCurrentPath()).toString()
 
 
         // remove header (blob content.length)

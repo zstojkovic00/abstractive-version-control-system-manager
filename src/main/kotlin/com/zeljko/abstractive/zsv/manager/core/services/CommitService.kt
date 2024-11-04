@@ -1,5 +1,6 @@
 package com.zeljko.abstractive.zsv.manager.core.services
 
+import com.zeljko.abstractive.zsv.manager.core.objects.Commit
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getCurrentHead
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.storeObject
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.updateCurrentHead
@@ -78,15 +79,38 @@ class CommitService(
         return commitSha
     }
 
-    fun compressFromContent(repositoryPath: Path, decompressedContent: ByteArray): Any {
+    fun compressFromContent(decompressedContent: ByteArray, path: Path): Any {
         val commitHeader = "commit ${decompressedContent.size}\u0000".toByteArray()
         val content = commitHeader + decompressedContent
 
         val compressedContent = content.zlibCompress()
         val commitSha = content.toSha1()
 
-        val objectsDirectory = repositoryPath.resolve(".git/objects")
+        val objectsDirectory = path.resolve(".git/objects")
         storeObject(objectsDirectory, commitSha, compressedContent)
         return commitSha
+    }
+
+    fun parseCommit(content: String): Commit {
+        var lines = content.split("\n")
+        val treeSha = lines.first { it.startsWith("tree") }.substringAfter("tree ").trim()
+        val parentSha = lines.firstOrNull { it.startsWith("parent") }?.substringAfter("parent ")?.trim()
+        val author = lines.first { it.startsWith("author") }.substringAfter("author ").trim()
+        val committer = lines.first { it.startsWith("committer") }.substringAfter("committer ").trim()
+
+        val index = lines.indexOf("") + 1
+        val message = if (index < lines.size) {
+            lines.subList(index, lines.size).joinToString("\n")
+        } else {
+            ""
+        }
+
+        return Commit(
+            treeSha = treeSha,
+            parentSha = parentSha,
+            author = author,
+            committer = committer,
+            message = message
+        )
     }
 }

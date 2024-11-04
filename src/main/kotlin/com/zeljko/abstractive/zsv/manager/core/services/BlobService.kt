@@ -12,12 +12,12 @@ import java.nio.file.Paths
 
 @Service
 class BlobService {
-    fun decompress(blobSha: String): Blob {
+    fun decompress(blobSha: String, basePath: Path): Blob {
         if (blobSha.length != 40) {
             throw InvalidHashException("Invalid blob hash. It must be exactly 40 characters long.")
         }
 
-        val path = getObjectShaPath(blobSha)
+        val path = getObjectShaPath(basePath, blobSha)
         val compressedContent = Files.readAllBytes(path)
         val decompressedContent = compressedContent.zlibDecompress()
 
@@ -60,7 +60,7 @@ class BlobService {
     }
 
 
-    fun compressFromContent(repositoryPath: Path, content: ByteArray): String {
+    fun compressFromContent(content: ByteArray, path: Path): String {
 
         val blobHeader = "blob ${content.size}\u0000".toByteArray(Charsets.UTF_8)
         val fullContent = blobHeader + content
@@ -74,7 +74,7 @@ class BlobService {
             blobSha = blobNameSHA1
         )
 
-        val objectsDirectory = repositoryPath.resolve(".git/objects")
+        val objectsDirectory = path.resolve(".git/objects")
         storeObject(objectsDirectory, blob.blobSha, blob.content)
 
         return blob.blobSha
