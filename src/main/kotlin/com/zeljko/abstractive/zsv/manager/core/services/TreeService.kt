@@ -1,5 +1,6 @@
 package com.zeljko.abstractive.zsv.manager.core.services
 
+import com.zeljko.abstractive.zsv.manager.core.objects.Blob
 import com.zeljko.abstractive.zsv.manager.core.objects.Tree
 import com.zeljko.abstractive.zsv.manager.utils.*
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getObjectShaPath
@@ -150,7 +151,7 @@ class TreeService(private val blobService: BlobService) {
                 }
                 REGULAR_FILE.mode -> {
                     val content = blobService.decompress(tree.objectSha, repositoryPath)
-                    Files.write(fullPath, content.content)
+                    Files.writeString(fullPath, content.toString())
                 }
             }
         }

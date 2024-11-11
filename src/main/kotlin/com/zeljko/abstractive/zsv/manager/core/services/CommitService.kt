@@ -2,11 +2,16 @@ package com.zeljko.abstractive.zsv.manager.core.services
 
 import com.zeljko.abstractive.zsv.manager.core.objects.Commit
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getCurrentHead
+import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getObjectShaPath
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.storeObject
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.updateCurrentHead
+import com.zeljko.abstractive.zsv.manager.utils.InvalidHashException
 import com.zeljko.abstractive.zsv.manager.utils.toSha1
 import com.zeljko.abstractive.zsv.manager.utils.zlibCompress
+import com.zeljko.abstractive.zsv.manager.utils.zlibDecompress
 import org.springframework.stereotype.Service
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 
@@ -91,7 +96,23 @@ class CommitService(
         return commitSha
     }
 
-    fun parseCommit(content: String): Commit {
+
+    fun decompress(commitSha: String, basePath: Path): Commit {
+        if (commitSha.length != 40) {
+            throw InvalidHashException("Invalid hash. It must be exactly 40 characters long.")
+        }
+
+        val path = getObjectShaPath(basePath, commitSha)
+        val compressedContent = Files.readAllBytes(path)
+        val decompressedContent = compressedContent.zlibDecompress()
+
+        // remove header
+        return parseCommitFromContent(decompressedContent
+            .toString(StandardCharsets.UTF_8)
+            .substringAfter("\u0000"))
+    }
+
+    fun parseCommitFromContent(content: String): Commit {
         var lines = content.split("\n")
         val treeSha = lines.first { it.startsWith("tree") }.substringAfter("tree ").trim()
         val parentSha = lines.firstOrNull { it.startsWith("parent") }?.substringAfter("parent ")?.trim()

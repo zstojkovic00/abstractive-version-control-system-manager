@@ -4,7 +4,7 @@ import java.nio.charset.StandardCharsets
 
 data class Blob(val content: ByteArray, val blobSha: String) {
     override fun toString(): String {
-        return content.toString(StandardCharsets.UTF_8)
+        return content.toString(StandardCharsets.UTF_8).substringAfter("\u0000")
     }
 
     override fun equals(other: Any?): Boolean {

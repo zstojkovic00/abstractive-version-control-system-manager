@@ -116,7 +116,7 @@ class GitNativeClient(
 
                 COMMIT -> {
                     if (latestTreeSha == null) {
-                        latestTreeSha = commitService.parseCommit(decompressed.toString(StandardCharsets.UTF_8)).treeSha
+                        latestTreeSha = commitService.parseCommitFromContent(decompressed.toString(StandardCharsets.UTF_8)).treeSha
                     }
                     val commitSha = commitService.compressFromContent(decompressed, repositoryPath)
                     println("Commit sha $commitSha")

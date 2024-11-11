@@ -18,9 +18,15 @@ class CommitCommands(private val commitService: CommitService) {
     }
 
     @Command(command = ["commit"], description = "Commit")
-    fun commit(@Option(shortNames = ['m'], required = true, description = "Message of commit") message: String) : String {
+    fun commit(@Option(shortNames = ['m'], required = true, description = "Message of commit") message: String): String {
 
         return commitService.commit(message)
+    }
+
+    @Command(command = ["log"], description = "Log all commits")
+    fun log() {
+        // TODO: implement this
+        throw UnsupportedOperationException("Not implemented!")
     }
 
 
