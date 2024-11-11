@@ -38,9 +38,15 @@ class RepositoryCommands(
 
     @Command(command = ["checkout"], description = "switch between branches")
     fun checkout(
-        @Option(shortNames = ['f'], required = true, description = "Path to the file to decompress") commitSha: String
-    ) {
-        checkoutService.checkout(commitSha)
+        @Option(shortNames = ['b'], required = false, description = "Create and checkout new branch") newBranch: String?,
+        @Option(shortNames = ['f'], required = true, description = "Path to the file to decompress") branchName: String,
+    ) : String {
+        checkoutService.checkout(branchName, newBranch)
+        return if (newBranch != null) {
+            "Switched to a new branch '$newBranch'"
+        } else {
+            "Switched to branch '$branchName'"
+        }
     }
 
 }
