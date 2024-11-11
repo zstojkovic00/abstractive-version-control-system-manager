@@ -13,12 +13,19 @@ class CheckoutService(
     private val commitService: CommitService,
     private val treeService: TreeService
 ) {
-    fun checkout(branch: String, newBranch: String? = null) {
+    fun checkout(branchName: String? = null, newBranch: String? = null) {
         val currentPath = getCurrentPath()
 
         if (newBranch != null) {
             val newBranchPath = checkIfBranchExist(newBranch)
-            val currentCommit = FileUtils.getCurrentHead()
+
+            val headContent = FileUtils.getCurrentHead()
+            val currentCommit = if (headContent.startsWith("ref: ")) {
+                val refPath = headContent.removePrefix("ref: ")
+                Files.readString(Paths.get(".git", refPath)).trim()
+            } else {
+                headContent
+            }
 
             // create new branch which points to current commit
             Files.createDirectories(newBranchPath.parent)
@@ -28,8 +35,7 @@ class CheckoutService(
             return
         }
 
-
-        val (commitSha, isBranch) = resolveBranch(branch)
+        val (commitSha, isBranch) = resolveBranch(branchName!!)
 
         cleanWorkingDirectory(currentPath)
 
@@ -38,7 +44,7 @@ class CheckoutService(
         treeService.extractToDisk(decompressedTree, treeSha, currentPath, currentPath)
 
         if (isBranch) {
-            FileUtils.updateCurrentHead("ref: refs/heads/$branch")
+            FileUtils.updateCurrentHead("ref: refs/heads/$branchName")
         } else {
             FileUtils.updateCurrentHead(commitSha)
         }
@@ -59,8 +65,8 @@ class CheckoutService(
 
         val branchPath = Paths.get(".git/refs/heads/$branch")
         if (Files.exists(branchPath)) {
-            val branchName = Files.readString(branchPath).trim()
-            return Pair(branchName, true)
+            val commitSha = Files.readString(branchPath).trim()
+            return Pair(commitSha, true)
         }
         throw IllegalArgumentException("Invalid branch $branch name")
     }

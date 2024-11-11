@@ -39,13 +39,16 @@ class RepositoryCommands(
     @Command(command = ["checkout"], description = "switch between branches")
     fun checkout(
         @Option(shortNames = ['b'], required = false, description = "Create and checkout new branch") newBranch: String?,
-        @Option(shortNames = ['f'], required = true, description = "Path to the file to decompress") branchName: String,
+        @Option(required = false, description = "Branch name or commit hash to checkout") branchName: String?
     ) : String {
-        checkoutService.checkout(branchName, newBranch)
-        return if (newBranch != null) {
-            "Switched to a new branch '$newBranch'"
+        if (newBranch != null) {
+            checkoutService.checkout(branchName = null, newBranch = newBranch)
+            return "Switched to a new branch '$newBranch'"
+        } else if (branchName != null) {
+            checkoutService.checkout(branchName = branchName, newBranch = null)
+            return "Switched to branch '$branchName'"
         } else {
-            "Switched to branch '$branchName'"
+            throw IllegalArgumentException("Either -b new-branch or branch/commit must be specified")
         }
     }
 
