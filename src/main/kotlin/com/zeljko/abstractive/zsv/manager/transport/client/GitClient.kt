@@ -1,3 +1,5 @@
 package com.zeljko.abstractive.zsv.manager.transport.client
 
-interface GitClient
+interface GitClient {
+    fun clone(url: String)
+}

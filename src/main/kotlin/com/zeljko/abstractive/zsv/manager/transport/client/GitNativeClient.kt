@@ -8,6 +8,8 @@ import com.zeljko.abstractive.zsv.manager.transport.model.GitReference
 import com.zeljko.abstractive.zsv.manager.transport.model.GitUrl
 import com.zeljko.abstractive.zsv.manager.utils.zlibDecompress
 import com.zeljko.abstractive.zsv.manager.transport.model.GitObjectType.*
+import com.zeljko.abstractive.zsv.manager.utils.MSB
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Component
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
@@ -20,11 +22,12 @@ import java.nio.file.Path
 import java.nio.file.Paths
 
 @Component
+@Qualifier("native")
 class GitNativeClient(
     private val blobService: BlobService,
     private val treeService: TreeService,
     private val commitService: CommitService
-) {
+) : GitClient {
     companion object {
         private const val FLUSH_PACKET = "0000"
         private const val NUL_BYTE = '\u0000'
@@ -34,7 +37,9 @@ class GitNativeClient(
         private const val NEWLINE = "\n"
     }
 
-    fun clone(gitUrl: GitUrl) {
+    override fun clone(url: String) {
+        val gitUrl = parseGitUrl(url)
+
         val repositoryName = "zeljko/" + gitUrl.path.substringAfterLast("/")
         val repositoryPath = Paths.get(repositoryName)
 
@@ -50,8 +55,18 @@ class GitNativeClient(
             val packByteArray = readWantResponse(input)
 
             createGitStructure(repositoryPath)
-            parsePack(packByteArray, repositoryPath);
+            parsePack(packByteArray, repositoryPath)
         }
+    }
+
+    private fun parseGitUrl(url: String): GitUrl {
+        val urlWithoutProtocol = url.removePrefix("git://")
+        val parts = urlWithoutProtocol.split("/", limit = 2)
+        return GitUrl(
+            host = parts[0],
+            port = 9418,
+            path = "/${parts[1]}"
+        )
     }
 
     private fun createGitStructure(repositoryPath: Path) {
@@ -70,7 +85,7 @@ class GitNativeClient(
 
     private fun parsePack(packByteArray: ByteArray, repositoryPath: Path) {
         var input = DataInputStream(ByteArrayInputStream(packByteArray))
-        val magicByte = input.readNBytes(4).toString(StandardCharsets.UTF_8);
+        val magicByte = input.readNBytes(4).toString(StandardCharsets.UTF_8)
         var latestTreeSha: String? = null
 
         if (magicByte != "PACK") {
@@ -84,26 +99,7 @@ class GitNativeClient(
 
 
         for (n in 1..nObjects) {
-            val byte = input.read() and 0xFF
-            // Extract object type from the first byte:
-            // Shift right by 4 to get first 3 bits and mask with 7 (0111) to get type
-            val type = (byte shr 4) and 7
-            println("Object type code $type")
-
-            // Extract initial size from remaining 4 bits of first byte
-            var size = byte and 15
-            var shift = 4
-
-            // Read variable-length size encoding:
-            // While MSB (Most Significant Bit) is 1, continue reading size bytes
-            var currentByte = byte
-            while ((currentByte and 0x80) != 0) {
-                currentByte = input.read() and 0xFF
-                size += (currentByte and 0x7F) shl shift
-                shift += 7
-            }
-            println("Object size: $size")
-
+            val (size, type) = input.MSB()
 
             /*
              Git sends objects one after another in format: [Header1][Object1][Header2][Object2]..[HeaderN][ObjectN]
@@ -122,7 +118,8 @@ class GitNativeClient(
                     if (latestTreeSha == null) {
                         latestTreeSha = commitService.parseCommit(decompressed.toString(StandardCharsets.UTF_8)).treeSha
                     }
-                    commitService.compressFromContent(decompressed, repositoryPath)
+                    val commitSha = commitService.compressFromContent(decompressed, repositoryPath)
+                    println("Commit sha $commitSha")
                     println(decompressed.toString(StandardCharsets.UTF_8))
                 }
 
@@ -143,7 +140,6 @@ class GitNativeClient(
             treeService.extractToDisk(rootTreeContent, latestTreeSha, repositoryPath, repositoryPath)
         }
     }
-
 
     private fun sendRefDiscoveryRequest(output: DataOutputStream, gitUrl: GitUrl) {
         // 002egit-upload-pack /test-repohost=127.0.0.1

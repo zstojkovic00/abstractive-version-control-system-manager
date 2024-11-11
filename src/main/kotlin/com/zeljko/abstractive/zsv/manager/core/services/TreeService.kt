@@ -55,7 +55,7 @@ class TreeService(private val blobService: BlobService) {
                         val blobSha = blobService.compressFromFile(true, file)
                         val fileMode = when {
                             Files.isExecutable(file) -> EXECUTABLE_FILE
-                            // TODO: fix -> Seems like compressFileToBlobObject for symbolic link is not working well
+                            // TODO: fix -> Seems like compressFromFile for symbolic link is not working well
                             // zsv sha -> a3c241ab148df99bc5924738958c3aaad76a322b
                             // git sha -> 541cb64f9b85000af670c5b925fa216ac6f98291
                             Files.isSymbolicLink(file) -> SYMBOLIC_LINK

@@ -75,6 +75,29 @@ fun ByteArray.zlibCompress(): ByteArray {
     return output.copyOfRange(0, compressedDataLength)
 }
 
+fun DataInputStream.MSB(): Pair<Int, Int> {
+    val byte = read() and 0xFF
+    // Extract object type from the first byte:
+    // Shift right by 4 to get first 3 bits and mask with 7 (0111) to get type
+    val type = (byte shr 4) and 7
+    println("Object type code $type")
+
+    // Extract initial size from remaining 4 bits of first byte
+    var size = byte and 15
+    var shift = 4
+
+    // Read variable-length size encoding:
+    // While MSB (Most Significant Bit) is 1, continue reading size bytes
+    var currentByte = byte
+    while ((currentByte and 0x80) != 0) {
+        currentByte = read() and 0xFF
+        size += (currentByte and 0x7F) shl shift
+        shift += 7
+    }
+    println("Object size: $size")
+    return Pair(size, type)
+}
+
 
 fun String.toSha1(): String {
     return MessageDigest
