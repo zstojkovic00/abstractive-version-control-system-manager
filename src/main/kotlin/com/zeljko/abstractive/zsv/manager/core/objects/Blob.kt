@@ -7,6 +7,11 @@ data class Blob(val content: ByteArray, val blobSha: String) {
         return content.toString(StandardCharsets.UTF_8).substringAfter("\u0000")
     }
 
+    fun getContentWithoutHeader(): ByteArray {
+        val nullByte = content.indexOf(0)
+        return content.slice(nullByte + 1 until content.size).toByteArray()
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -19,5 +24,6 @@ data class Blob(val content: ByteArray, val blobSha: String) {
         return blobSha.take(8).toInt(16)
 
     }
+
 }
 
