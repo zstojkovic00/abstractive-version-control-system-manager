@@ -7,13 +7,19 @@ import java.nio.file.Paths
 
 object FileUtils {
 
-    fun getObjectShaPath(path: Path, objectSha: String): Path {
-        val repositoryPath = path.resolve(".git/objects/${objectSha.substring(0, 2)}/${objectSha.substring(2)}")
+    private const val GIT_DIR = ".git"
+    private const val OBJECTS_DIR = "$GIT_DIR/objects"
+    private const val REFS_DIR = "$GIT_DIR/refs"
+    private const val HEAD_FILE = "$GIT_DIR/HEAD"
+    private const val HEADS_DIR = "$REFS_DIR/heads"
 
-        if (!Files.exists(path)) {
+    fun getObjectShaPath(path: Path, objectSha: String): Path {
+        val objectPath = path.resolve("$OBJECTS_DIR/${objectSha.substring(0, 2)}/${objectSha.substring(2)}")
+
+        if (!Files.exists(objectPath)) {
             throw ObjectNotFoundException("Object not found.")
         }
-        return repositoryPath
+        return objectPath
     }
 
     fun storeObject(directory: Path, objectSha: String, compressedContent: ByteArray) {
@@ -23,25 +29,34 @@ object FileUtils {
         Files.write(blobFile, compressedContent)
     }
 
-    fun getCurrentPath(): Path {
-        return Paths.get("").toAbsolutePath()
+    fun getCurrentPath(): Path = Paths.get("").toAbsolutePath()
+
+    fun getGitDir(): Path {
+        val currentPath = getCurrentPath()
+        val gitPath = currentPath.resolve(GIT_DIR)
+
+        if (Files.exists(gitPath)) {
+            throw RepositoryAlreadyExistsException("zsv repository already exists in this directory")
+        }
+
+        return gitPath
     }
 
     fun getCurrentHead(): String {
-        val headDirectory = Paths.get(".git/HEAD")
+        val headPath = Paths.get(HEAD_FILE)
 
-        if (!Files.exists(headDirectory)) {
+        if (!Files.exists(headPath)) {
             throw ObjectNotFoundException("Not a git repository")
         }
 
-        val headContent = Files.readString(headDirectory).trim()
+        val headContent = Files.readString(headPath).trim()
 
         return if (headContent.startsWith("ref: ")) {
             val branchReference = headContent.substringAfter("ref: ").trim()
-            val branchDirectory = Paths.get(".git/$branchReference")
+            val branchPath = Paths.get("$GIT_DIR/$branchReference")
 
-            if (Files.exists(branchDirectory)) {
-                Files.readString(branchDirectory).trim()
+            if (Files.exists(branchPath)) {
+                Files.readString(branchPath).trim()
             } else {
                 "" // New branch
             }
@@ -51,19 +66,33 @@ object FileUtils {
     }
 
     fun updateCurrentHead(commitSha: String) {
-        val headDirectory = Paths.get(".git/HEAD")
-        val headContent = Files.readString(headDirectory)
+        val headPath = Paths.get(HEAD_FILE)
+        val headContent = Files.readString(headPath)
 
         if (headContent.startsWith("ref: ")) {
             val branchReference = headContent.substringAfter("ref: ").trim()
-            val branchPath = Paths.get(".git", branchReference)
+            val branchPath = Paths.get(GIT_DIR, branchReference)
             Files.createDirectories(branchPath.parent)
             Files.writeString(branchPath, commitSha + "\n")
             println("Updated branch reference: $branchPath with SHA: $commitSha")
         } else {
-            Files.writeString(headDirectory, commitSha + "\n")
+            Files.writeString(headPath, commitSha + "\n")
             println("Updated HEAD directly with SHA: $commitSha")
         }
     }
 
+    fun readCommitShaFromBranchName(branchName: String): String {
+        val branchPath = Paths.get("$HEADS_DIR/$branchName")
+        return Files.readString(branchPath).trim()
+    }
+
+    fun checkIfBranchExists(branchName: String): Boolean {
+        return Files.exists(Paths.get("$HEADS_DIR/$branchName"))
+    }
+
+    fun createNewBranch(branchName: String, commitSha: String) {
+        val branchPath = Paths.get("$HEADS_DIR/$branchName")
+        Files.createDirectories(branchPath.parent)
+        Files.writeString(branchPath, "$commitSha\n")
+    }
 }
