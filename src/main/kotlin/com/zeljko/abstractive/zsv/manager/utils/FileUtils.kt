@@ -65,7 +65,7 @@ object FileUtils {
         }
     }
 
-    fun updateCurrentHead(commitSha: String) {
+    fun updateBranchCommit(commitSha: String) {
         val headPath = Paths.get(HEAD_FILE)
         val headContent = Files.readString(headPath)
 
@@ -81,6 +81,10 @@ object FileUtils {
         }
     }
 
+    fun updateHeadReference(branchName: String) {
+        val headPath = Paths.get(HEAD_FILE)
+        Files.writeString(headPath, "ref: refs/heads/$branchName\n")
+    }
     fun readCommitShaFromBranchName(branchName: String): String {
         val branchPath = Paths.get("$HEADS_DIR/$branchName")
         return Files.readString(branchPath).trim()

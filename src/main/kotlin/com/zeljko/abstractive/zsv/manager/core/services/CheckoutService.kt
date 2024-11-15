@@ -5,7 +5,7 @@ import com.zeljko.abstractive.zsv.manager.utils.FileUtils.createNewBranch
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getCurrentHead
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getCurrentPath
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.readCommitShaFromBranchName
-import com.zeljko.abstractive.zsv.manager.utils.FileUtils.updateCurrentHead
+import com.zeljko.abstractive.zsv.manager.utils.FileUtils.updateHeadReference
 import org.springframework.stereotype.Service
 import java.nio.file.Files
 import java.nio.file.Path
@@ -36,7 +36,7 @@ class CheckoutService(
         val (treeSha, _) = commitService.decompress(commitSha, currentPath)
         val decompressedTree = treeService.getDecompressedTreeContent(treeSha, currentPath)
         treeService.extractToDisk(decompressedTree, treeSha, currentPath, currentPath)
-        updateCurrentHead(branchName)
+        updateHeadReference(branchName)
     }
 
     private fun createAndCheckoutBranch(branchName: String) {
@@ -46,7 +46,7 @@ class CheckoutService(
 
         val currentCommitSha = getCurrentHead()
         createNewBranch(branchName, currentCommitSha)
-        updateCurrentHead(branchName)
+        updateHeadReference(branchName)
     }
 
     private fun cleanWorkingDirectory(path: Path) {

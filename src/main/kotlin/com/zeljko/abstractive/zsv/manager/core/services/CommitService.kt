@@ -2,9 +2,10 @@ package com.zeljko.abstractive.zsv.manager.core.services
 
 import com.zeljko.abstractive.zsv.manager.core.objects.Commit
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getCurrentHead
+import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getCurrentPath
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getObjectShaPath
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.storeObject
-import com.zeljko.abstractive.zsv.manager.utils.FileUtils.updateCurrentHead
+import com.zeljko.abstractive.zsv.manager.utils.FileUtils.updateBranchCommit
 import com.zeljko.abstractive.zsv.manager.utils.InvalidHashException
 import com.zeljko.abstractive.zsv.manager.utils.toSha1
 import com.zeljko.abstractive.zsv.manager.utils.zlibCompress
@@ -74,12 +75,12 @@ class CommitService(
     }
 
     fun commit(message: String): String {
-        val treeSha = treeService.compressFromFile(Paths.get("").toAbsolutePath())
+        val treeSha = treeService.compressFromFile(getCurrentPath())
         val parentSha = getCurrentHead()
         val commitSha = compressFromMessage(message, treeSha, parentSha)
 
         // update HEAD
-        updateCurrentHead(commitSha)
+        updateBranchCommit(commitSha)
 
         return commitSha
     }
