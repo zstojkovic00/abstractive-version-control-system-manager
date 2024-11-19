@@ -14,26 +14,24 @@ class RepositoryCommands(
     @Command(command = ["init"], description = "Initialize empty $ZSV_DIR repository")
     fun initRepository(): String {
         val zsvPath = createZsvStructure()
-        return "Initialized empty zsv repository in $zsvPath/$ZSV_DIR/"
+        return "Initialized empty zsv repository in $zsvPath"
     }
 
 
     @Command(command = ["checkout"], description = "Switch to existing branch")
     fun checkout(
-        @Option(required = true, description = "Branch name to checkout")
-        branchName: String
+        @Option(required = true, description = "Branch name to checkout") branchName: String
     ): String {
         checkoutService.checkout(branchName, isNewBranch = false)
-        return "Switched to branch '$branchName'"
+        return "Switched to branch $branchName"
     }
 
     @Command(command = ["checkout -b"], description = "Create and switch to new branch")
     fun checkoutNewBranch(
-        @Option(required = true, description = "New branch name")
-        branchName: String
+        @Option(required = true, description = "New branch name") branchName: String
     ): String {
         checkoutService.checkout(branchName, isNewBranch = true)
-        return "Switched to a new branch '$branchName'"
+        return "Switched to a new branch $branchName"
     }
 
 }

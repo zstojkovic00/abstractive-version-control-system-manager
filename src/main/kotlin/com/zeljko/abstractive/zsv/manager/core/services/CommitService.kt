@@ -15,6 +15,8 @@ import org.springframework.stereotype.Service
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 @Service
 class CommitService(
@@ -98,7 +100,7 @@ class CommitService(
     }
 
 
-    fun decompress(commitSha: String, basePath: Path): Commit {
+    fun decompress(commitSha: String, basePath: Path = getCurrentPath()): Commit {
         if (commitSha.length != 40) {
             throw InvalidHashException("Invalid hash. It must be exactly 40 characters long.")
         }
@@ -108,16 +110,18 @@ class CommitService(
         val decompressedContent = compressedContent.zlibDecompress()
 
         // remove header
-        return parseCommitFromContent(decompressedContent
-            .toString(StandardCharsets.UTF_8)
-            .substringAfter("\u0000"))
+        return parseCommitFromContent(
+            decompressedContent
+                .toString(StandardCharsets.UTF_8)
+                .substringAfter("\u0000")
+        )
     }
 
     fun parseCommitFromContent(content: String): Commit {
         var lines = content.split("\n")
         val treeSha = lines.first { it.startsWith("tree") }.substringAfter("tree ").trim()
         val parentSha = lines.firstOrNull { it.startsWith("parent") }?.substringAfter("parent ")?.trim()
-        val author = lines.first { it.startsWith("author") }.substringAfter("author ").trim()
+        val author = lines.first { it.startsWith("author") }.substringAfter("author ").substringBeforeLast(">").trim()
         val committer = lines.first { it.startsWith("committer") }.substringAfter("committer ").trim()
 
         val index = lines.indexOf("") + 1
@@ -133,6 +137,28 @@ class CommitService(
             author = author,
             committer = committer,
             message = message
+        )
+    }
+
+    fun readCommitRecursively(commitSha: String = getCurrentHead()) {
+        val commit = decompress(commitSha)
+        prettyPrintCommit(commitSha, commit)
+
+        if (commit.parentSha != null) {
+            readCommitRecursively(commit.parentSha)
+        }
+    }
+
+    private fun prettyPrintCommit(commitSha: String, commit: Commit) {
+        return println(
+            """
+            commit  $commitSha
+            Author: ${commit.author}
+            Date:   ${LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)}
+          
+                    ${commit.message}
+                   
+        """.trimIndent()
         )
     }
 }

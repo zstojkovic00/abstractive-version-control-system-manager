@@ -25,8 +25,7 @@ class CommitCommands(private val commitService: CommitService) {
 
     @Command(command = ["log"], description = "Log all commits")
     fun log() {
-        // TODO: implement this
-        throw UnsupportedOperationException("Not implemented!")
+        return commitService.readCommitRecursively()
     }
 
 
