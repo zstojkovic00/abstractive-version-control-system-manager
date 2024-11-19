@@ -2,7 +2,10 @@ package com.zeljko.abstractive.zsv.manager.core.objects
 
 import java.nio.charset.StandardCharsets
 
-data class Blob(val content: ByteArray, val blobSha: String) {
+data class Blob(
+    val content: ByteArray,
+    val blobSha: String
+) {
     override fun toString(): String {
         return content.toString(StandardCharsets.UTF_8).substringAfter("\u0000")
     }

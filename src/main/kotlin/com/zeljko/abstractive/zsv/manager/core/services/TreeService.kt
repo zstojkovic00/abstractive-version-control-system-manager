@@ -5,6 +5,8 @@ import com.zeljko.abstractive.zsv.manager.utils.*
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getObjectShaPath
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.storeObject
 import com.zeljko.abstractive.zsv.manager.core.objects.ObjectType.*
+import com.zeljko.abstractive.zsv.manager.utils.FileUtils.OBJECTS_DIR
+import com.zeljko.abstractive.zsv.manager.utils.FileUtils.ZSV_DIR
 import org.springframework.stereotype.Service
 import java.io.ByteArrayOutputStream
 import java.nio.file.Files
@@ -37,7 +39,7 @@ class TreeService(private val blobService: BlobService) {
 
     fun compressFromFile(path: Path): String {
         // TODO: .gitignore
-        val ignoredItems = setOf(".zsv", ".git", ".gradle", ".idea", "build", "HELP.md",
+        val ignoredItems = setOf(ZSV_DIR, ".git", ".gradle", ".idea", "build", "HELP.md",
             "abstractive-version-control-system-manager.log")
 
         val objects = mutableListOf<Tree>()
@@ -75,7 +77,7 @@ class TreeService(private val blobService: BlobService) {
         val compressedContent = content.zlibCompress()
         val treeSha = content.toSha1()
 
-        val objectsDirectory = repositoryPath.resolve(".git/objects")
+        val objectsDirectory = repositoryPath.resolve(OBJECTS_DIR)
         storeObject(objectsDirectory, treeSha, compressedContent)
         return treeSha
     }
@@ -90,7 +92,7 @@ class TreeService(private val blobService: BlobService) {
         val treeSha = content.toSha1()
 
         val currentDirectory = Paths.get("").toAbsolutePath()
-        val objectsDirectory = currentDirectory.resolve(".git/objects")
+        val objectsDirectory = currentDirectory.resolve(OBJECTS_DIR)
         storeObject(objectsDirectory, treeSha, compressedContent)
         return treeSha
     }

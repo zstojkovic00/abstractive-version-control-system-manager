@@ -2,12 +2,13 @@ package com.zeljko.abstractive.zsv.manager.core.services
 
 import com.zeljko.abstractive.zsv.manager.core.objects.Blob
 import com.zeljko.abstractive.zsv.manager.utils.*
+import com.zeljko.abstractive.zsv.manager.utils.FileUtils.OBJECTS_DIR
+import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getCurrentPath
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getObjectShaPath
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.storeObject
 import org.springframework.stereotype.Service
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.Paths
 
 
 @Service
@@ -48,11 +49,11 @@ class BlobService {
             blobSha = blobNameSHA1
         )
 
-        val currentDirectory = Paths.get("").toAbsolutePath()
+        val currentDirectory = getCurrentPath()
 //        storeObject(currentDirectory, blob.blobSha, blob.content)
 
         if (write) {
-            val objectsDirectory = currentDirectory.resolve(".git/objects")
+            val objectsDirectory = currentDirectory.resolve(OBJECTS_DIR)
             storeObject(objectsDirectory, blob.blobSha, blob.content)
         }
 
@@ -74,7 +75,7 @@ class BlobService {
             blobSha = blobNameSHA1
         )
 
-        val objectsDirectory = path.resolve(".git/objects")
+        val objectsDirectory = path.resolve(OBJECTS_DIR)
         storeObject(objectsDirectory, blob.blobSha, blob.content)
 
         return blob.blobSha

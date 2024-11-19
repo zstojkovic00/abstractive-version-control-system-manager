@@ -1,5 +1,6 @@
 package com.zeljko.abstractive.zsv.manager.core.services
 
+import com.zeljko.abstractive.zsv.manager.utils.FileUtils.ZSV_DIR
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.checkIfBranchExists
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.createNewBranch
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getCurrentHead
@@ -31,13 +32,16 @@ class CheckoutService(
         }
 
         val commitSha = readCommitShaFromBranchName(branchName)
-        cleanWorkingDirectory(currentPath)
+        println(commitSha)
+//        cleanWorkingDirectory(currentPath)
 
         val (treeSha, _) = commitService.decompress(commitSha, currentPath)
         val decompressedTree = treeService.getDecompressedTreeContent(treeSha, currentPath)
-        treeService.extractToDisk(decompressedTree, treeSha, currentPath, currentPath)
-        updateHeadReference(branchName)
+        println(decompressedTree)
+//        treeService.extractToDisk(decompressedTree, treeSha, currentPath, currentPath)
+//        updateHeadReference(branchName)
     }
+
 
     private fun createAndCheckoutBranch(branchName: String) {
         if (checkIfBranchExists(branchName)) {
@@ -51,7 +55,7 @@ class CheckoutService(
 
     private fun cleanWorkingDirectory(path: Path) {
         Files.walk(path)
-            .filter { !it.startsWith(path.resolve(".git")) }
+            .filter { !it.startsWith(path.resolve(ZSV_DIR)) }
             .filter { it != path }
             .sorted(Comparator.reverseOrder())
             .forEach { Files.delete(it) }

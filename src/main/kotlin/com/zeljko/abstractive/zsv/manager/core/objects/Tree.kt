@@ -1,4 +1,5 @@
 package com.zeljko.abstractive.zsv.manager.core.objects
+
 import com.zeljko.abstractive.zsv.manager.core.objects.ObjectType.*
 
 
@@ -15,14 +16,20 @@ fileMode     objectType   objectSha                                   fileName
 100644       blob         10500012fca9b4425b50de67a7258a12cba0c076    test.txt
 040000       tree         81803f67f37d96f8b76ae69719ebb5e5cbcbb869    test
  */
-data class Tree(val fileMode: String, val fileName: String, val objectSha: String) {
+data class Tree(
+    val fileMode: String,
+    val fileName: String,
+    val objectSha: String
+) {
 
     override fun toString(): String {
-        return String.format("%-6s %-4s %-40s %s",
+        return String.format(
+            "%-6s %-4s %-40s %s",
             fileMode,
             getObjectType(),
             objectSha,
-            fileName)
+            fileName
+        )
     }
 
     private val objectType: ObjectType

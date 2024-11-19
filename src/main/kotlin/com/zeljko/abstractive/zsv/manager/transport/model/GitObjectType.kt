@@ -4,14 +4,11 @@ package com.zeljko.abstractive.zsv.manager.transport.model
  OBJ_COMMIT = 1, OBJ_TREE = 2, OBJ_BLOB = 3, OBJ_TAG = 4
  OBJ_OFS_DELTA = 6, OBJ_REF_DELTA = 7
 */
-enum class GitObjectType(val type: Int) {
+enum class GitObjectType {
 
-    COMMIT(1),
-    TREE(2),
-    BLOB(3),
-    TAG(4),
-    OFS_DELTA(6),
-    REF_DELTA(7);
+    COMMIT, TREE, BLOB, TAG,
+    OFS_DELTA, REF_DELTA;
+
     companion object {
         fun fromType(type: Int): GitObjectType {
             return when (type) {

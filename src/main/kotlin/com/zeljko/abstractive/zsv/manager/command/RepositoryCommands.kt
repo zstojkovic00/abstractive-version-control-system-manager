@@ -1,33 +1,22 @@
 package com.zeljko.abstractive.zsv.manager.command
 
 import com.zeljko.abstractive.zsv.manager.core.services.CheckoutService
-import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getGitDir
+import com.zeljko.abstractive.zsv.manager.utils.FileUtils.ZSV_DIR
+import com.zeljko.abstractive.zsv.manager.utils.FileUtils.createZsvStructure
 import org.springframework.shell.command.annotation.Command
 import org.springframework.shell.command.annotation.Option
 
-import java.nio.charset.StandardCharsets
-import java.nio.file.Files
 
 @Command(command = ["zsv"], description = "Zsv commands")
 class RepositoryCommands(
     private val checkoutService: CheckoutService
 ) {
-    @Command(command = ["init"], description = "Initialize empty .zsv repository")
+    @Command(command = ["init"], description = "Initialize empty $ZSV_DIR repository")
     fun initRepository(): String {
-        val zsvPath = getGitDir()
-
-        listOf("objects", "refs/heads", "refs/tags").forEach {
-            Files.createDirectories(zsvPath.resolve(it))
-        }
-
-        Files.writeString(zsvPath.resolve("HEAD"), "ref: refs/heads/master\n", StandardCharsets.UTF_8)
-        Files.writeString(
-            zsvPath.resolve("description"),
-            "Unnamed repository; edit this file 'description' to name the repository.\n", StandardCharsets.UTF_8
-        )
-
-        return "Initialized empty zsv repository in $zsvPath/.git/"
+        val zsvPath = createZsvStructure()
+        return "Initialized empty zsv repository in $zsvPath/$ZSV_DIR/"
     }
+
 
     @Command(command = ["checkout"], description = "Switch to existing branch")
     fun checkout(

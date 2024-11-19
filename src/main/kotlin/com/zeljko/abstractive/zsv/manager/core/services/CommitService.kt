@@ -1,6 +1,7 @@
 package com.zeljko.abstractive.zsv.manager.core.services
 
 import com.zeljko.abstractive.zsv.manager.core.objects.Commit
+import com.zeljko.abstractive.zsv.manager.utils.FileUtils.OBJECTS_DIR
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getCurrentHead
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getCurrentPath
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getObjectShaPath
@@ -14,7 +15,6 @@ import org.springframework.stereotype.Service
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.Paths
 
 @Service
 class CommitService(
@@ -51,8 +51,8 @@ class CommitService(
         }
 
         // TODO: Replace with dynamic timestamp and user info from configuration
-        val author = "author test <test@gmail.com> 1727635374 +0200\n"
-        val committer = "committer test <test@gmail.com> 1727635374 +0200\n"
+        val author = "author test <00zeljkostojkovic@gmail.com> 1727635374 +0200\n"
+        val committer = "committer test <00zeljkostojkovic@gmail.com> 1727635374 +0200\n"
 
         commitBuilder.append(author)
         commitBuilder.append(committer)
@@ -68,8 +68,8 @@ class CommitService(
         val compressedContent = commit.toByteArray(Charsets.UTF_8).zlibCompress()
         val commitSha = commit.toSha1()
 
-        val currentDirectory = Paths.get("").toAbsolutePath()
-        val objectsDirectory = currentDirectory.resolve(".git/objects")
+        val currentDirectory = getCurrentPath()
+        val objectsDirectory = currentDirectory.resolve(OBJECTS_DIR)
         storeObject(objectsDirectory, commitSha, compressedContent)
         return commitSha
     }
@@ -92,7 +92,7 @@ class CommitService(
         val compressedContent = content.zlibCompress()
         val commitSha = content.toSha1()
 
-        val objectsDirectory = path.resolve(".git/objects")
+        val objectsDirectory = path.resolve(OBJECTS_DIR)
         storeObject(objectsDirectory, commitSha, compressedContent)
         return commitSha
     }

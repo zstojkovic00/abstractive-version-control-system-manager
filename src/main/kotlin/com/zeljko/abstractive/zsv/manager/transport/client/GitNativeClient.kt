@@ -8,6 +8,7 @@ import com.zeljko.abstractive.zsv.manager.transport.model.GitReference
 import com.zeljko.abstractive.zsv.manager.transport.model.GitUrl
 import com.zeljko.abstractive.zsv.manager.utils.zlibDecompress
 import com.zeljko.abstractive.zsv.manager.transport.model.GitObjectType.*
+import com.zeljko.abstractive.zsv.manager.utils.FileUtils.createZsvStructure
 import com.zeljko.abstractive.zsv.manager.utils.MSB
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Component
@@ -17,7 +18,6 @@ import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.net.Socket
 import java.nio.charset.StandardCharsets
-import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 
@@ -26,7 +26,7 @@ import java.nio.file.Paths
 class GitNativeClient(
     private val blobService: BlobService,
     private val treeService: TreeService,
-    private val commitService: CommitService
+    private val commitService: CommitService,
 ) : GitClient {
     companion object {
         private const val FLUSH_PACKET = "0000"
@@ -54,7 +54,7 @@ class GitNativeClient(
             sendWantRequest(output, references)
             val packByteArray = readWantResponse(input)
 
-            createGitStructure(repositoryPath)
+            createZsvStructure(repositoryPath)
             parsePack(packByteArray, repositoryPath)
         }
     }
@@ -67,20 +67,6 @@ class GitNativeClient(
             port = 9418,
             path = "/${parts[1]}"
         )
-    }
-
-    private fun createGitStructure(repositoryPath: Path) {
-        Files.createDirectories(repositoryPath)
-
-        val gitDirectory = repositoryPath.resolve(".git")
-        Files.createDirectories(gitDirectory)
-
-        listOf("objects", "refs/heads", "refs/tags", "info", "hooks")
-            .forEach {
-                Files.createDirectories(gitDirectory.resolve(it))
-            }
-
-        Files.writeString(gitDirectory.resolve("HEAD"), "ref: refs/heads/master\n")
     }
 
     private fun parsePack(packByteArray: ByteArray, repositoryPath: Path) {

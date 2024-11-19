@@ -1,5 +1,6 @@
 package com.zeljko.abstractive.zsv.manager.utils
 
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -7,11 +8,26 @@ import java.nio.file.Paths
 
 object FileUtils {
 
-    private const val GIT_DIR = ".git"
-    private const val OBJECTS_DIR = "$GIT_DIR/objects"
-    private const val REFS_DIR = "$GIT_DIR/refs"
-    private const val HEAD_FILE = "$GIT_DIR/HEAD"
-    private const val HEADS_DIR = "$REFS_DIR/heads"
+    const val ZSV_DIR = ".zsv"
+    const val OBJECTS_DIR = "$ZSV_DIR/objects"
+    const val REFS_DIR = "$ZSV_DIR/refs"
+    const val HEAD_FILE = "$ZSV_DIR/HEAD"
+    const val HEADS_DIR = "$REFS_DIR/heads"
+
+    fun createZsvStructure(path: Path = getCurrentPath()): Path {
+        val zsvPath = path.resolve(ZSV_DIR)
+
+        listOf("objects", "refs/heads", "refs/tags").forEach {
+            Files.createDirectories(zsvPath.resolve(it))
+        }
+
+        Files.writeString(zsvPath.resolve("HEAD"), "ref: refs/heads/master\n", StandardCharsets.UTF_8)
+        Files.writeString(
+            zsvPath.resolve("description"),
+            "Unnamed repository; edit this file 'description' to name the repository.\n", StandardCharsets.UTF_8
+        )
+        return zsvPath
+    }
 
     fun getObjectShaPath(path: Path, objectSha: String): Path {
         val objectPath = path.resolve("$OBJECTS_DIR/${objectSha.substring(0, 2)}/${objectSha.substring(2)}")
@@ -31,29 +47,29 @@ object FileUtils {
 
     fun getCurrentPath(): Path = Paths.get("").toAbsolutePath()
 
-    fun getGitDir(): Path {
+    fun getZsvDir(): Path {
         val currentPath = getCurrentPath()
-        val gitPath = currentPath.resolve(GIT_DIR)
+        val zsvPath = currentPath.resolve(ZSV_DIR)
 
-        if (Files.exists(gitPath)) {
+        if (Files.exists(zsvPath)) {
             throw RepositoryAlreadyExistsException("zsv repository already exists in this directory")
         }
 
-        return gitPath
+        return zsvPath
     }
 
     fun getCurrentHead(): String {
         val headPath = Paths.get(HEAD_FILE)
 
         if (!Files.exists(headPath)) {
-            throw ObjectNotFoundException("Not a git repository")
+            throw ObjectNotFoundException("Not a zsv repository")
         }
 
         val headContent = Files.readString(headPath).trim()
 
         return if (headContent.startsWith("ref: ")) {
             val branchReference = headContent.substringAfter("ref: ").trim()
-            val branchPath = Paths.get("$GIT_DIR/$branchReference")
+            val branchPath = Paths.get("$ZSV_DIR/$branchReference")
 
             if (Files.exists(branchPath)) {
                 Files.readString(branchPath).trim()
@@ -71,7 +87,7 @@ object FileUtils {
 
         if (headContent.startsWith("ref: ")) {
             val branchReference = headContent.substringAfter("ref: ").trim()
-            val branchPath = Paths.get(GIT_DIR, branchReference)
+            val branchPath = Paths.get(ZSV_DIR, branchReference)
             Files.createDirectories(branchPath.parent)
             Files.writeString(branchPath, commitSha + "\n")
             println("Updated branch reference: $branchPath with SHA: $commitSha")
@@ -85,6 +101,7 @@ object FileUtils {
         val headPath = Paths.get(HEAD_FILE)
         Files.writeString(headPath, "ref: refs/heads/$branchName\n")
     }
+
     fun readCommitShaFromBranchName(branchName: String): String {
         val branchPath = Paths.get("$HEADS_DIR/$branchName")
         return Files.readString(branchPath).trim()

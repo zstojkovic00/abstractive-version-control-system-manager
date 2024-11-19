@@ -10,9 +10,9 @@ Project is named according to java conventions :)
 - `zsv ls-tree -f <tree-sha>` - Display tree object content
 - `zsv commit-tree -m <message> -t <tree-sha> -p <parent-sha>` - Create commit object
 - `zsv commit -m <message>` - Create commit with current state
+- `zsv checkout -b <branchName>` - Create or change branch
 
 
-## TODO:
 ### Transport Protocol (git://)
 Git protocol
 - `zsv clone -url <git-url>` - Clone repository
