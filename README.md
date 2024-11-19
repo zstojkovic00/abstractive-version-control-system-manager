@@ -11,6 +11,7 @@ Project is named according to java conventions :)
 - `zsv commit-tree -m <message> -t <tree-sha> -p <parent-sha>` - Create commit object
 - `zsv commit -m <message>` - Create commit with current state
 - `zsv checkout -b <branchName>` - Create or change branch
+- `zsv log` - Log all commits
 
 
 ### Transport Protocol (git://)

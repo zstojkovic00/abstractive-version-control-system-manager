@@ -53,8 +53,8 @@ class CommitService(
         }
 
         // TODO: Replace with dynamic timestamp and user info from configuration
-        val author = "author test <00zeljkostojkovic@gmail.com> 1727635374 +0200\n"
-        val committer = "committer test <00zeljkostojkovic@gmail.com> 1727635374 +0200\n"
+        val author = "author zeljko <00zeljkostojkovic@gmail.com> 1727635374 +0200\n"
+        val committer = "committer zeljko <00zeljkostojkovic@gmail.com> 1727635374 +0200\n"
 
         commitBuilder.append(author)
         commitBuilder.append(committer)
@@ -121,7 +121,7 @@ class CommitService(
         var lines = content.split("\n")
         val treeSha = lines.first { it.startsWith("tree") }.substringAfter("tree ").trim()
         val parentSha = lines.firstOrNull { it.startsWith("parent") }?.substringAfter("parent ")?.trim()
-        val author = lines.first { it.startsWith("author") }.substringAfter("author ").substringBeforeLast(">").trim()
+        val author = lines.first { it.startsWith("author") }.substringAfter("author ").substringBeforeLast(">").trim() + ">"
         val committer = lines.first { it.startsWith("committer") }.substringAfter("committer ").trim()
 
         val index = lines.indexOf("") + 1
