@@ -81,6 +81,35 @@ object FileUtils {
         }
     }
 
+    fun updateHeadReference(branchName: String) {
+        val headPath = Paths.get(HEAD_FILE)
+        Files.writeString(headPath, "ref: refs/heads/$branchName\n")
+    }
+
+    fun getCurrentBranchName(): String {
+        val branchName = Files.readString(Paths.get(HEAD_FILE)).trim()
+        return if (branchName.startsWith("ref: ")) {
+            branchName.substringAfter("refs: refs/heads/").trim()
+        } else {
+            "HEAD" // detached HEAD state
+        }
+    }
+
+    fun createNewBranch(branchName: String, commitSha: String) {
+        val branchPath = Paths.get("$HEADS_DIR/$branchName")
+        Files.createDirectories(branchPath.parent)
+        Files.writeString(branchPath, "$commitSha\n")
+    }
+
+    fun readCommitShaFromBranchName(branchName: String): String {
+        val branchPath = Paths.get("$HEADS_DIR/$branchName")
+        return Files.readString(branchPath).trim()
+    }
+
+    fun checkIfBranchExists(branchName: String): Boolean {
+        return Files.exists(Paths.get("$HEADS_DIR/$branchName"))
+    }
+
     fun updateBranchCommit(commitSha: String) {
         val headPath = Paths.get(HEAD_FILE)
         val headContent = Files.readString(headPath)
@@ -97,23 +126,5 @@ object FileUtils {
         }
     }
 
-    fun updateHeadReference(branchName: String) {
-        val headPath = Paths.get(HEAD_FILE)
-        Files.writeString(headPath, "ref: refs/heads/$branchName\n")
-    }
 
-    fun readCommitShaFromBranchName(branchName: String): String {
-        val branchPath = Paths.get("$HEADS_DIR/$branchName")
-        return Files.readString(branchPath).trim()
-    }
-
-    fun checkIfBranchExists(branchName: String): Boolean {
-        return Files.exists(Paths.get("$HEADS_DIR/$branchName"))
-    }
-
-    fun createNewBranch(branchName: String, commitSha: String) {
-        val branchPath = Paths.get("$HEADS_DIR/$branchName")
-        Files.createDirectories(branchPath.parent)
-        Files.writeString(branchPath, "$commitSha\n")
-    }
 }

@@ -3,6 +3,7 @@ package com.zeljko.abstractive.zsv.manager.core.services
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.ZSV_DIR
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.checkIfBranchExists
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.createNewBranch
+import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getCurrentBranchName
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getCurrentHead
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getCurrentPath
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.readCommitShaFromBranchName
@@ -18,6 +19,10 @@ class CheckoutService(
     private val treeService: TreeService
 ) {
     fun checkout(branchName: String, isNewBranch: Boolean) {
+        if (!validateCheckout(branchName)) {
+            throw IllegalStateException("Already on branch $branchName")
+        }
+
         if (isNewBranch) {
             createAndCheckoutBranch(branchName)
         } else {
@@ -27,25 +32,31 @@ class CheckoutService(
 
     private fun checkoutExistingBranch(branchName: String) {
         val currentPath = getCurrentPath()
+
         if (!checkIfBranchExists(branchName)) {
             throw IllegalArgumentException("There is no branch $branchName")
         }
 
         val commitSha = readCommitShaFromBranchName(branchName)
         println(commitSha)
-//        cleanWorkingDirectory(currentPath)
+        cleanWorkingDirectory(currentPath)
 
         val (treeSha, _) = commitService.decompress(commitSha, currentPath)
         val decompressedTree = treeService.getDecompressedTreeContent(treeSha, currentPath)
         println(decompressedTree)
-//        treeService.extractToDisk(decompressedTree, treeSha, currentPath, currentPath)
-//        updateHeadReference(branchName)
+        treeService.extractToDisk(decompressedTree, treeSha, currentPath, currentPath)
+        updateHeadReference(branchName)
+    }
+
+    private fun validateCheckout(branchName: String): Boolean {
+        val currentBranch = getCurrentBranchName()
+        return currentBranch != branchName
     }
 
 
     private fun createAndCheckoutBranch(branchName: String) {
         if (checkIfBranchExists(branchName)) {
-            throw IllegalArgumentException("Branch $branchName already exists")
+            throw IllegalArgumentException("Branch $branchName already exists, use checkout without -b")
         }
 
         val currentCommitSha = getCurrentHead()
