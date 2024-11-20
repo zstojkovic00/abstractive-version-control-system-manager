@@ -150,7 +150,7 @@ class TreeService(private val blobService: BlobService) {
                     val decompressedTree = getDecompressedTreeContent(tree.objectSha, repositoryPath)
                     extractToDisk(decompressedTree, tree.objectSha, fullPath, repositoryPath)
                 }
-                REGULAR_FILE.mode -> {
+                REGULAR_FILE.mode, EXECUTABLE_FILE.mode -> {
                     val content = blobService.decompress(tree.objectSha, repositoryPath)
                     Files.write(fullPath, content.getContentWithoutHeader())
                 }
