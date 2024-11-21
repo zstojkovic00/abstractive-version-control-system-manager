@@ -13,6 +13,7 @@ object FileUtils {
     const val REFS_DIR = "$ZSV_DIR/refs"
     const val HEAD_FILE = "$ZSV_DIR/HEAD"
     const val HEADS_DIR = "$REFS_DIR/heads"
+    const val INDEX_DIR = "$ZSV_DIR/index"
 
     fun createZsvStructure(path: Path = getCurrentPath()): Path {
         val zsvPath = path.resolve(ZSV_DIR)
