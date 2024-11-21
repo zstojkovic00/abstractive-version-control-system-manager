@@ -12,7 +12,15 @@ Project is named according to java conventions :)
 - `zsv commit -m <message>` - Create commit with current state
 - `zsv checkout -b <branchName>` - Create or change branch
 - `zsv log` - Log all commits
+- `zsv add` - Add file to staging area
+- `zsv cat-index` - Read index object content
 
+
+## TODO:
+- `zsv status`
+- `zsv merge`
+- `zsv add .`
+- `zsv push` ? 
 
 ### Transport Protocol (git://)
 Git protocol
