@@ -7,6 +7,7 @@ import com.zeljko.abstractive.zsv.manager.utils.FileUtils.storeObject
 import com.zeljko.abstractive.zsv.manager.core.objects.ObjectType.*
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.OBJECTS_DIR
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.ZSV_DIR
+import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getCurrentPath
 import org.springframework.stereotype.Service
 import java.io.ByteArrayOutputStream
 import java.nio.file.Files
@@ -16,9 +17,9 @@ import java.nio.file.Paths
 
 @Service
 class TreeService(private val blobService: BlobService) {
-    fun decompress(nameOnly: Boolean, treeSha: String): List<Tree> {
+    fun decompress(nameOnly: Boolean, sha: String): List<Tree> {
 
-        val path = getObjectShaPath(FileUtils.getCurrentPath(), treeSha)
+        val path = getObjectShaPath(getCurrentPath(), sha)
         val compressedContent = Files.readAllBytes(path)
         val decompressedContent = compressedContent.zlibDecompress()
 
@@ -31,13 +32,13 @@ class TreeService(private val blobService: BlobService) {
         return parseTreeContent(decompressedContent)
     }
 
-    fun getDecompressedTreeContent(treeSha: String, repositoryPath: Path): ByteArray {
-        val path = getObjectShaPath(repositoryPath, treeSha)
+    fun getDecompressedTreeContent(sha: String, repositoryPath: Path): ByteArray {
+        val path = getObjectShaPath(repositoryPath, sha)
         val compressedContent = Files.readAllBytes(path)
         return compressedContent.zlibDecompress()
     }
 
-    fun compressFromFile(path: Path): String {
+    fun compressFromFile(path: Path = getCurrentPath()): String {
         // TODO: .gitignore
         val ignoredItems = setOf(ZSV_DIR, ".git", ".gradle", ".idea", "build", "HELP.md",
             "abstractive-version-control-system-manager.log")
@@ -51,8 +52,8 @@ class TreeService(private val blobService: BlobService) {
                 .forEach { file ->
                     val name = file.fileName.toString()
                     if (Files.isDirectory(file)) {
-                        val treeSha = compressFromFile(file)
-                        objects.add(Tree(DIRECTORY.mode, name, treeSha))
+                        val sha = compressFromFile(file)
+                        objects.add(Tree(DIRECTORY.mode, name, sha))
                     } else {
                         val blobSha = blobService.compressFromFile(true, file)
                         val fileMode = when {
@@ -75,11 +76,11 @@ class TreeService(private val blobService: BlobService) {
         val content = treeHeader + decompressedContent
 
         val compressedContent = content.zlibCompress()
-        val treeSha = content.toSha1()
+        val sha = content.toSha1()
 
         val objectsDirectory = repositoryPath.resolve(OBJECTS_DIR)
-        storeObject(objectsDirectory, treeSha, compressedContent)
-        return treeSha
+        storeObject(objectsDirectory, sha, compressedContent)
+        return sha
     }
 
     private fun storeTree(objects: List<Tree>): String {
@@ -89,12 +90,12 @@ class TreeService(private val blobService: BlobService) {
         val content = treeHeader + treeContent
 
         val compressedContent = content.zlibCompress()
-        val treeSha = content.toSha1()
+        val sha = content.toSha1()
 
         val currentDirectory = Paths.get("").toAbsolutePath()
         val objectsDirectory = currentDirectory.resolve(OBJECTS_DIR)
-        storeObject(objectsDirectory, treeSha, compressedContent)
-        return treeSha
+        storeObject(objectsDirectory, sha, compressedContent)
+        return sha
     }
 
 
@@ -102,7 +103,7 @@ class TreeService(private val blobService: BlobService) {
         val outputStream = ByteArrayOutputStream()
         trees.forEach { tree ->
             val modeAndName = "${tree.fileMode} ${tree.fileName}\u0000".toByteArray()
-            val sha = tree.objectSha.toShaByte()
+            val sha = tree.sha.toShaByte()
             outputStream.write(modeAndName)
             outputStream.write(sha)
         }
@@ -137,7 +138,7 @@ class TreeService(private val blobService: BlobService) {
         return result
     }
 
-    fun extractToDisk(decompressed: ByteArray, treeSha: String, extractPath: Path, repositoryPath: Path) {
+    fun extractToDisk(decompressed: ByteArray, sha: String, extractPath: Path, repositoryPath: Path) {
         val trees = parseTreeContent(decompressed, true)
         println("Trees: $trees")
 
@@ -147,11 +148,11 @@ class TreeService(private val blobService: BlobService) {
             when (tree.fileMode) {
                 DIRECTORY.mode -> {
                     Files.createDirectories(fullPath)
-                    val decompressedTree = getDecompressedTreeContent(tree.objectSha, repositoryPath)
-                    extractToDisk(decompressedTree, tree.objectSha, fullPath, repositoryPath)
+                    val decompressedTree = getDecompressedTreeContent(tree.sha, repositoryPath)
+                    extractToDisk(decompressedTree, tree.sha, fullPath, repositoryPath)
                 }
                 REGULAR_FILE.mode, EXECUTABLE_FILE.mode -> {
-                    val content = blobService.decompress(tree.objectSha, repositoryPath)
+                    val content = blobService.decompress(tree.sha, repositoryPath)
                     Files.write(fullPath, content.getContentWithoutHeader())
                 }
             }

@@ -12,9 +12,9 @@ class BlobCommands(private val blobService: BlobService) {
     // zsv cat-file -f a3c241ab148df99bc5924738958c3aaad76a322b
     @Command(command = ["cat-file"], description = "Read blob object")
     fun decompressBlobObject(
-        @Option(shortNames = ['f'], required = true, description = "Path to the file to decompress") blobSha: String
+        @Option(shortNames = ['f'], required = true, description = "Path to the file to decompress") sha: String
     ): String {
-        val blob = blobService.decompress(blobSha, getCurrentPath()).toString()
+        val blob = blobService.decompress(sha, getCurrentPath()).toString()
 
 
         // remove header (blob content.length)

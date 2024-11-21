@@ -13,12 +13,12 @@ import java.nio.file.Path
 
 @Service
 class BlobService {
-    fun decompress(blobSha: String, basePath: Path): Blob {
-        if (blobSha.length != 40) {
+    fun decompress(sha: String, basePath: Path): Blob {
+        if (sha.length != 40) {
             throw InvalidHashException("Invalid blob hash. It must be exactly 40 characters long.")
         }
 
-        val path = getObjectShaPath(basePath, blobSha)
+        val path = getObjectShaPath(basePath, sha)
         val compressedContent = Files.readAllBytes(path)
         val decompressedContent = compressedContent.zlibDecompress()
 
@@ -30,7 +30,7 @@ class BlobService {
 
         return Blob(
             content = decompressedContent,
-            blobSha = blobSha
+            sha = sha
         )
     }
 
@@ -42,22 +42,22 @@ class BlobService {
         val compressedContent = content.zlibCompress()
 
         // create blob name
-        val blobNameSHA1 = content.toSha1()
+        val blobSHA1 = content.toSha1()
 
         val blob = Blob(
             content = compressedContent,
-            blobSha = blobNameSHA1
+            sha = blobSHA1
         )
 
         val currentDirectory = getCurrentPath()
-//        storeObject(currentDirectory, blob.blobSha, blob.content)
+//        storeObject(currentDirectory, blob.sha, blob.content)
 
         if (write) {
             val objectsDirectory = currentDirectory.resolve(OBJECTS_DIR)
-            storeObject(objectsDirectory, blob.blobSha, blob.content)
+            storeObject(objectsDirectory, blob.sha, blob.content)
         }
 
-        return blob.blobSha
+        return blob.sha
     }
 
 
@@ -68,16 +68,16 @@ class BlobService {
         val compressedContent = fullContent.zlibCompress()
 
         // create blob name
-        val blobNameSHA1 = fullContent.toSha1()
+        val blobSHA1 = fullContent.toSha1()
 
         val blob = Blob(
             content = compressedContent,
-            blobSha = blobNameSHA1
+            sha = blobSHA1
         )
 
         val objectsDirectory = path.resolve(OBJECTS_DIR)
-        storeObject(objectsDirectory, blob.blobSha, blob.content)
+        storeObject(objectsDirectory, blob.sha, blob.content)
 
-        return blob.blobSha
+        return blob.sha
     }
 }

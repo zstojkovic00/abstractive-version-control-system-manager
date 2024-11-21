@@ -68,23 +68,23 @@ class CommitService(
         val commit = "commit ${commitContent.length}\u0000$commitContent"
 
         val compressedContent = commit.toByteArray(Charsets.UTF_8).zlibCompress()
-        val commitSha = commit.toSha1()
+        val sha = commit.toSha1()
 
         val currentDirectory = getCurrentPath()
         val objectsDirectory = currentDirectory.resolve(OBJECTS_DIR)
-        storeObject(objectsDirectory, commitSha, compressedContent)
-        return commitSha
+        storeObject(objectsDirectory, sha, compressedContent)
+        return sha
     }
 
     fun commit(message: String): String {
         val treeSha = treeService.compressFromFile(getCurrentPath())
         val parentSha = getCurrentHead()
-        val commitSha = compressFromMessage(message, treeSha, parentSha)
+        val sha = compressFromMessage(message, treeSha, parentSha)
 
         // update HEAD
-        updateBranchCommit(commitSha)
+        updateBranchCommit(sha)
 
-        return commitSha
+        return sha
     }
 
     fun compressFromContent(decompressedContent: ByteArray, path: Path): Any {
@@ -92,20 +92,20 @@ class CommitService(
         val content = commitHeader + decompressedContent
 
         val compressedContent = content.zlibCompress()
-        val commitSha = content.toSha1()
+        val sha = content.toSha1()
 
         val objectsDirectory = path.resolve(OBJECTS_DIR)
-        storeObject(objectsDirectory, commitSha, compressedContent)
-        return commitSha
+        storeObject(objectsDirectory, sha, compressedContent)
+        return sha
     }
 
 
-    fun decompress(commitSha: String, basePath: Path = getCurrentPath()): Commit {
-        if (commitSha.length != 40) {
+    fun decompress(sha: String, basePath: Path = getCurrentPath()): Commit {
+        if (sha.length != 40) {
             throw InvalidHashException("Invalid hash. It must be exactly 40 characters long.")
         }
 
-        val path = getObjectShaPath(basePath, commitSha)
+        val path = getObjectShaPath(basePath, sha)
         val compressedContent = Files.readAllBytes(path)
         val decompressedContent = compressedContent.zlibDecompress()
 
@@ -140,19 +140,19 @@ class CommitService(
         )
     }
 
-    fun readCommitRecursively(commitSha: String = getCurrentHead()) {
-        val commit = decompress(commitSha)
-        prettyPrintCommit(commitSha, commit)
+    fun readCommitRecursively(sha: String = getCurrentHead()) {
+        val commit = decompress(sha)
+        prettyPrintCommit(sha, commit)
 
         if (commit.parentSha != null) {
             readCommitRecursively(commit.parentSha)
         }
     }
 
-    private fun prettyPrintCommit(commitSha: String, commit: Commit) {
+    private fun prettyPrintCommit(sha: String, commit: Commit) {
         return println(
             """
-            commit  $commitSha
+            commit  $sha
             Author: ${commit.author}
             Date:   ${LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)}
           

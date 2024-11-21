@@ -19,7 +19,7 @@ fileMode     objectType   objectSha                                   fileName
 data class Tree(
     val fileMode: String,
     val fileName: String,
-    val objectSha: String
+    val sha: String
 ) {
 
     override fun toString(): String {
@@ -27,7 +27,7 @@ data class Tree(
             "%-6s %-4s %-40s %s",
             fileMode,
             getObjectType(),
-            objectSha,
+            sha,
             fileName
         )
     }

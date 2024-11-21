@@ -18,6 +18,8 @@ class CheckoutService(
     private val commitService: CommitService,
     private val treeService: TreeService
 ) {
+
+    // TODO: support checkout with commitSha
     fun checkout(branchName: String, isNewBranch: Boolean) {
         if (!validateCheckout(branchName)) {
             throw IllegalStateException("Already on branch $branchName")

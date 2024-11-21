@@ -4,7 +4,7 @@ import java.nio.charset.StandardCharsets
 
 data class Blob(
     val content: ByteArray,
-    val blobSha: String
+    val sha: String
 ) {
     override fun toString(): String {
         return content.toString(StandardCharsets.UTF_8).substringAfter("\u0000")
@@ -20,11 +20,11 @@ data class Blob(
         if (javaClass != other?.javaClass) return false
 
         other as Blob
-        return this.blobSha == other.blobSha
+        return this.sha == other.sha
     }
 
     override fun hashCode(): Int {
-        return blobSha.take(8).toInt(16)
+        return sha.take(8).toInt(16)
 
     }
 

@@ -19,7 +19,6 @@ class CommitCommands(private val commitService: CommitService) {
 
     @Command(command = ["commit"], description = "Commit")
     fun commit(@Option(shortNames = ['m'], required = true, description = "Message of commit") message: String): String {
-
         return commitService.commit(message)
     }
 
