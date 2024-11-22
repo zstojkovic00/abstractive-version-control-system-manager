@@ -11,22 +11,23 @@ The index is a binary file that has the following format:
 
     DIRC <version_number> <number of entries> // 12 bytes
 
-    <ctime> <mtime> <dev> <ino> <mode> <uid> <gid> <SHA> <flags> <path> // 62 + path.length
+    <ctime> <mtime> <dev> <ino> <mode> <uid> <gid> <SHA> <flags> <path> //
     <ctime> <mtime> <dev> <ino> <mode> <uid> <gid> <SHA> <flags> <path>
     <ctime> <mtime> <dev> <ino> <mode> <uid> <gid> <SHA> <flags> <path>
 
     # more entries
 
  */
-data class Index(
-    val ctime: Long, // creation/change time, nanoseconds
-    val mtime: Long, // modification time, nanoseconds
-    val dev: Int, // The ID of device containing this file
-    val ino: Long, // the file's inode number
-    val mode: Int,
-    val uid: Int, // User ID of owner
-    val gid: Int, // Group ID of owner
-    val sha: String?,
-    val flags: Int,
-    val path: String
+// 68 bytes without header and path name
+data class IndexEntry(
+    val ctime: Long, // creation/change time, nanoseconds // 8
+    val mtime: Long, // modification time, nanoseconds // 8
+    val dev: Long, // The ID of device containing this file // 8
+    val ino: Long, // the file's inode number // 8
+    val mode: Int, // 4
+    val uid: Int, // User ID of owner // 4
+    val gid: Int, // Group ID of owner // 4
+    val sha: String?, // 20
+    val flags: Int, // 4
+    val pathName: String // test.txt 8 + nul = 9
 )

@@ -6,7 +6,7 @@ import com.zeljko.abstractive.zsv.manager.utils.FileUtils.ZSV_DIR
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.createZsvStructure
 import org.springframework.shell.command.annotation.Command
 import org.springframework.shell.command.annotation.Option
-import java.nio.file.Path
+import java.nio.file.Paths
 
 
 @Command(command = ["zsv"], description = "Zsv commands")
@@ -20,11 +20,23 @@ class RepositoryCommands(
         return "Initialized empty zsv repository in $zsvPath"
     }
 
+    @Command(command = ["status"], description = "prints current branch, untracked files, changes to be committed")
+    fun status() {
+        // TODO: implement this
+        throw NotImplementedError("Not implemented")
+    }
+
     @Command(command = ["add"], description = "Add file to staging area")
     fun writeFileToIndex(
-        @Option(required = true, description = "Path to file") path: Path
+        @Option(required = true, description = "Path to file") filePath: String
     ) {
-        indexService.saveFileToIndex(path)
+        indexService.saveFileToIndex(Paths.get(filePath))
+    }
+
+    @Command(command = ["cat-index"], description = "Read index file")
+    fun readIndexFile(
+    ) {
+        println(indexService.parseIndexFile())
     }
 
 
