@@ -33,7 +33,6 @@ class IndexService(
         for (file in filesToAdd) {
             addFileToIndex(file)
         }
-
     }
 
     private fun addFileToIndex(filePath: String) {
@@ -105,5 +104,15 @@ class IndexService(
         buffer.position(4).putInt(2)
         buffer.position(8).putInt(0)
         Files.write(indexPath, buffer.array())
+    }
+
+    fun getIndexFiles(): Set<IndexEntry.FileStatus> {
+        return parseIndexFile().mapTo(HashSet()) {
+            IndexEntry.FileStatus(
+                mtime = it.mtime,
+                ino = it.ino,
+                pathName = it.pathName
+            )
+        }
     }
 }

@@ -35,6 +35,12 @@ data class IndexEntry(
     val flags: Int,        // Flags (4 bytes)
     val pathName: String   // Path + null terminator
 ) {
+    data class FileStatus(
+        val mtime: Long,
+        val ino: Long,
+        val pathName: String
+    )
+
     fun serialize(file: RandomAccessFile, blobSha: String) {
         file.writeLong(ctime)
         file.writeLong(mtime)

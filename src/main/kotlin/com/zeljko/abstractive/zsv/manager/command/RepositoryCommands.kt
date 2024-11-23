@@ -2,6 +2,7 @@ package com.zeljko.abstractive.zsv.manager.command
 
 import com.zeljko.abstractive.zsv.manager.core.services.CheckoutService
 import com.zeljko.abstractive.zsv.manager.core.services.IndexService
+import com.zeljko.abstractive.zsv.manager.core.services.RepositoryService
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.ZSV_DIR
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.createZsvStructure
 import org.springframework.shell.command.annotation.Command
@@ -11,7 +12,8 @@ import org.springframework.shell.command.annotation.Option
 @Command(command = ["zsv"], description = "Zsv commands")
 class RepositoryCommands(
     private val checkoutService: CheckoutService,
-    private val indexService: IndexService
+    private val indexService: IndexService,
+    private val repositoryService: RepositoryService
 ) {
     @Command(command = ["init"], description = "Initialize empty $ZSV_DIR repository")
     fun initRepository(): String {
@@ -21,8 +23,7 @@ class RepositoryCommands(
 
     @Command(command = ["status"], description = "prints current branch, untracked files, changes to be committed")
     fun status() {
-        // TODO: implement this
-        throw NotImplementedError("Not implemented")
+        repositoryService.status()
     }
 
     @Command(command = ["add"], description = "Add file to staging area")

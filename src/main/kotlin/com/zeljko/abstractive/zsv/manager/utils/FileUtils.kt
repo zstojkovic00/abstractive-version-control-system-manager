@@ -1,9 +1,11 @@
 package com.zeljko.abstractive.zsv.manager.utils
 
+import com.zeljko.abstractive.zsv.manager.core.objects.IndexEntry
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.nio.file.attribute.BasicFileAttributes
 import java.util.stream.Collectors
 
 
@@ -54,7 +56,6 @@ object FileUtils {
     fun getCurrentPath(): Path = Paths.get("").toAbsolutePath()
 
     fun getAllFiles(path: Path = getCurrentPath()): HashSet<String> {
-
         return Files.walk(path)
             .filter { file ->
                 if (file == path || Files.isDirectory(file)) {
@@ -67,6 +68,27 @@ object FileUtils {
             .map { path.relativize(it).toString() }
             .sorted()
             .collect(Collectors.toCollection(::HashSet))
+    }
+
+    fun getAllFilesWithAttributes(path: Path = getCurrentPath()): Set<IndexEntry.FileStatus> {
+        return Files.walk(path)
+            .filter { file ->
+                if (file == path || Files.isDirectory(file)) {
+                    return@filter false
+                }
+
+                val relativePath = path.relativize(file.toAbsolutePath())
+                !relativePath.any { ignoredItems.contains(it.toString()) }
+            }
+            .map { file ->
+                val attributes = Files.readAttributes(file, BasicFileAttributes::class.java)
+                IndexEntry.FileStatus(
+                    mtime = attributes.lastModifiedTime().toMillis(),
+                    ino = Files.getAttribute(file, "unix:ino") as Long,
+                    pathName = path.relativize(file).toString()
+                )
+            }
+            .collect(Collectors.toSet())
     }
 
     fun getZsvDir(): Path {
