@@ -2,6 +2,7 @@ package com.zeljko.abstractive.zsv.manager.core.services
 
 import com.zeljko.abstractive.zsv.manager.core.objects.IndexEntry
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.INDEX_DIR
+import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getAllFiles
 import org.springframework.stereotype.Service
 import java.io.RandomAccessFile
 import java.nio.ByteBuffer
@@ -16,27 +17,39 @@ class IndexService(
 ) {
     val indexPath: Path = Paths.get(INDEX_DIR)
 
-    fun saveFileToIndex(filePath: Path) {
+    fun saveFileToIndex(filePath: String) {
 
         if (!Files.exists(indexPath)) {
             Files.createFile(indexPath)
-            val buffer: ByteBuffer = ByteBuffer.allocate(12)
-            buffer.position(0).put("DIRC".toByteArray())
-            buffer.position(4).putInt(2)
-            buffer.position(8).putInt(0)
-            Files.write(indexPath, buffer.array())
+            writeIndexHeader(indexPath)
         }
 
-        val indexEntry = IndexEntry.getFileAttributes(filePath)
+        val filesToAdd: Set<String> = if (filePath == ".") {
+            getAllFiles()
+        } else {
+            setOf(filePath)
+        }
+
+        for (file in filesToAdd) {
+            addFileToIndex(file)
+        }
+
+    }
+
+    private fun addFileToIndex(filePath: String) {
+        val path = Paths.get(filePath)
+
+        val indexEntry = IndexEntry.getFileAttributes(path)
         val index = parseIndexFile(false)
 
         index.firstOrNull {
-            it.pathName == indexEntry.pathName
+            it.pathName == indexEntry.pathName ||
+                    it.ino == indexEntry.ino // check if file is renamed
         }?.let { entry ->
             if (entry.mtime != indexEntry.mtime) {
                 updateIndexEntry(indexEntry, entry.offset!!)
             }
-        } ?: writeIndexEntry(filePath, indexEntry)
+        } ?: writeIndexEntry(path, indexEntry)
     }
 
     private fun updateIndexEntry(indexEntry: IndexEntry, offset: Int) {
@@ -84,5 +97,13 @@ class IndexService(
         }
 
         return indexEntries
+    }
+
+    private fun writeIndexHeader(indexPath: Path) {
+        val buffer: ByteBuffer = ByteBuffer.allocate(12)
+        buffer.position(0).put("DIRC".toByteArray())
+        buffer.position(4).putInt(2)
+        buffer.position(8).putInt(0)
+        Files.write(indexPath, buffer.array())
     }
 }

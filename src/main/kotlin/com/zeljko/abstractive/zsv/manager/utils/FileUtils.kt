@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.util.stream.Collectors
 
 
 object FileUtils {
@@ -14,6 +15,10 @@ object FileUtils {
     const val HEAD_FILE = "$ZSV_DIR/HEAD"
     const val HEADS_DIR = "$REFS_DIR/heads"
     const val INDEX_DIR = "$ZSV_DIR/index"
+    private val ignoredItems = setOf(
+        ZSV_DIR, ".git", ".gradle", ".idea", "build", "HELP.md",
+        "abstractive-version-control-system-manager.log"
+    )
 
     fun createZsvStructure(path: Path = getCurrentPath()): Path {
         val zsvPath = path.resolve(ZSV_DIR)
@@ -47,6 +52,22 @@ object FileUtils {
     }
 
     fun getCurrentPath(): Path = Paths.get("").toAbsolutePath()
+
+    fun getAllFiles(path: Path = getCurrentPath()): HashSet<String> {
+
+        return Files.walk(path)
+            .filter { file ->
+                if (file == path || Files.isDirectory(file)) {
+                    return@filter false
+                }
+
+                val relativePath = path.relativize(file.toAbsolutePath())
+                !relativePath.any { ignoredItems.contains(it.toString()) }
+            }
+            .map { path.relativize(it).toString() }
+            .sorted()
+            .collect(Collectors.toCollection(::HashSet))
+    }
 
     fun getZsvDir(): Path {
         val currentPath = getCurrentPath()

@@ -6,7 +6,6 @@ import com.zeljko.abstractive.zsv.manager.utils.FileUtils.ZSV_DIR
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.createZsvStructure
 import org.springframework.shell.command.annotation.Command
 import org.springframework.shell.command.annotation.Option
-import java.nio.file.Paths
 
 
 @Command(command = ["zsv"], description = "Zsv commands")
@@ -30,7 +29,7 @@ class RepositoryCommands(
     fun writeFileToIndex(
         @Option(required = true, description = "Path to file") filePath: String
     ) {
-        indexService.saveFileToIndex(Paths.get(filePath))
+        indexService.saveFileToIndex(filePath)
     }
 
     @Command(command = ["cat-index"], description = "Read index file")
@@ -38,7 +37,6 @@ class RepositoryCommands(
     ) {
         println(indexService.parseIndexFile())
     }
-
 
     @Command(command = ["checkout"], description = "Switch to existing branch")
     fun checkout(
