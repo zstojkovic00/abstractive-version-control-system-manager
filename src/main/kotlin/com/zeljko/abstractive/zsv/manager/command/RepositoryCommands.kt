@@ -22,8 +22,8 @@ class RepositoryCommands(
     }
 
     @Command(command = ["status"], description = "prints current branch, untracked files, changes to be committed")
-    fun status() {
-        repositoryService.status()
+    fun status(): String {
+        return repositoryService.status()
     }
 
     @Command(command = ["add"], description = "Add file to staging area")

@@ -6,6 +6,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.attribute.BasicFileAttributes
+import java.util.TreeSet
 import java.util.stream.Collectors
 
 
@@ -17,7 +18,7 @@ object FileUtils {
     const val HEAD_FILE = "$ZSV_DIR/HEAD"
     const val HEADS_DIR = "$REFS_DIR/heads"
     const val INDEX_DIR = "$ZSV_DIR/index"
-    private val ignoredItems = setOf(
+    public val ignoredItems = setOf(
         ZSV_DIR, ".git", ".gradle", ".idea", "build", "HELP.md",
         "abstractive-version-control-system-manager.log"
     )
@@ -55,7 +56,7 @@ object FileUtils {
 
     fun getCurrentPath(): Path = Paths.get("").toAbsolutePath()
 
-    fun getAllFiles(path: Path = getCurrentPath()): HashSet<String> {
+    fun getAllFiles(path: Path = getCurrentPath()): TreeSet<String> {
         return Files.walk(path)
             .filter { file ->
                 if (file == path || Files.isDirectory(file)) {
@@ -67,10 +68,10 @@ object FileUtils {
             }
             .map { path.relativize(it).toString() }
             .sorted()
-            .collect(Collectors.toCollection(::HashSet))
+            .collect(Collectors.toCollection(::TreeSet))
     }
 
-    fun getAllFilesWithAttributes(path: Path = getCurrentPath()): Set<IndexEntry.FileStatus> {
+    fun getAllFilesWithAttributes(path: Path = getCurrentPath()): TreeSet<IndexEntry.FileStatus> {
         return Files.walk(path)
             .filter { file ->
                 if (file == path || Files.isDirectory(file)) {
@@ -88,7 +89,7 @@ object FileUtils {
                     pathName = path.relativize(file).toString()
                 )
             }
-            .collect(Collectors.toSet())
+            .collect(Collectors.toCollection(::TreeSet))
     }
 
     fun getZsvDir(): Path {

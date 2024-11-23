@@ -106,8 +106,8 @@ class IndexService(
         Files.write(indexPath, buffer.array())
     }
 
-    fun getIndexFiles(): Set<IndexEntry.FileStatus> {
-        return parseIndexFile().mapTo(HashSet()) {
+    fun getIndexFiles(): List<IndexEntry.FileStatus> {
+        return parseIndexFile().map {
             IndexEntry.FileStatus(
                 mtime = it.mtime,
                 ino = it.ino,

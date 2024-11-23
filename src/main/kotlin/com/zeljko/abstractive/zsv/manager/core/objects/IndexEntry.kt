@@ -39,7 +39,11 @@ data class IndexEntry(
         val mtime: Long,
         val ino: Long,
         val pathName: String
-    )
+    ) : Comparable<FileStatus> {
+        override fun compareTo(other: FileStatus): Int {
+            return this.pathName.compareTo(other.pathName)
+        }
+    }
 
     fun serialize(file: RandomAccessFile, blobSha: String) {
         file.writeLong(ctime)
