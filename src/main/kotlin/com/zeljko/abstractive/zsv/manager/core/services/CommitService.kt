@@ -6,11 +6,11 @@ import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getCurrentHead
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getCurrentPath
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getObjectShaPath
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.storeObject
-import com.zeljko.abstractive.zsv.manager.utils.FileUtils.updateBranchCommit
 import com.zeljko.abstractive.zsv.manager.utils.InvalidHashException
 import com.zeljko.abstractive.zsv.manager.utils.toSha1
 import com.zeljko.abstractive.zsv.manager.utils.zlibCompress
 import com.zeljko.abstractive.zsv.manager.utils.zlibDecompress
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -20,29 +20,9 @@ import java.time.format.DateTimeFormatter
 
 @Service
 class CommitService(
-    private val treeService: TreeService
+    private val treeService: TreeService,
+    private val eventPublisher: ApplicationEventPublisher
 ) {
-
-    /**
-     * Commit object structure:
-     * commit {size}\0{content}
-     *
-     * Content format:
-     * tree {tree_sha}
-     * parent {parent_sha} (optional, can be multiple)
-     * author {author_name} <{author_email}> {author_timestamp} {author_timezone}
-     * committer {committer_name} <{committer_email}> {committer_timestamp} {committer_timezone}
-     *
-     * {commit_message}
-     * -------------------------------------------------------------------------------------------
-     * Usage example:
-     * 1. Create tree: git write-tree -> 9acc3277ad88cd6e2d489a81cf82bf3b3dc5d012
-     * 2. Get current HEAD: git rev-parse HEAD -> 7f8812a9e2e9b36cd2136f7c2e79405ff98e3c28
-     * 3. Create commit: zsv commit-tree -m "Test" -t 9acc3277ad88cd6e2d489a81cf82bf3b3dc5d012 -p 7f8812a9e2e9b36cd2136f7c2e79405ff98e3c28
-     *    Output: b4ffac0fc29939a6ba99fe5a15fc5cfb270ac4cb
-     * 4. Update HEAD: git reset --hard b4ffac0fc29939a6ba99fe5a15fc5cfb270ac4cb
-     * 5. Verify: git log
-     */
     fun compressFromMessage(message: String, treeSha: String, parentSha: String): String {
         val commitBuilder = StringBuilder()
 
@@ -80,10 +60,7 @@ class CommitService(
         val treeSha = treeService.compressFromFile(getCurrentPath())
         val parentSha = getCurrentHead()
         val sha = compressFromMessage(message, treeSha, parentSha)
-
-        // update HEAD
-        updateBranchCommit(sha)
-
+        eventPublisher.publishEvent(sha)
         return sha
     }
 
@@ -121,7 +98,8 @@ class CommitService(
         var lines = content.split("\n")
         val treeSha = lines.first { it.startsWith("tree") }.substringAfter("tree ").trim()
         val parentSha = lines.firstOrNull { it.startsWith("parent") }?.substringAfter("parent ")?.trim()
-        val author = lines.first { it.startsWith("author") }.substringAfter("author ").substringBeforeLast(">").trim() + ">"
+        val author =
+            lines.first { it.startsWith("author") }.substringAfter("author ").substringBeforeLast(">").trim() + ">"
         val committer = lines.first { it.startsWith("committer") }.substringAfter("committer ").trim()
 
         val index = lines.indexOf("") + 1

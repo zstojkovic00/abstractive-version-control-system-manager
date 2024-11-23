@@ -1,23 +1,39 @@
 package com.zeljko.abstractive.zsv.manager.core.services
 
+import com.zeljko.abstractive.zsv.manager.utils.FileUtils
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.ZSV_DIR
-import com.zeljko.abstractive.zsv.manager.utils.FileUtils.checkIfBranchExists
-import com.zeljko.abstractive.zsv.manager.utils.FileUtils.createNewBranch
-import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getCurrentBranchName
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getCurrentHead
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getCurrentPath
-import com.zeljko.abstractive.zsv.manager.utils.FileUtils.readCommitShaFromBranchName
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.updateHeadReference
+import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Service
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.Paths
 
 
 @Service
-class CheckoutService(
+class BranchService(
     private val commitService: CommitService,
     private val treeService: TreeService
 ) {
+
+    @EventListener
+    fun updateBranchCommit(commitSha: String) {
+        val headPath = Paths.get(FileUtils.HEAD_FILE)
+        val headContent = Files.readString(headPath)
+
+        if (headContent.startsWith("ref: ")) {
+            val branchReference = headContent.substringAfter("ref: ").trim()
+            val branchPath = Paths.get(ZSV_DIR, branchReference)
+            Files.createDirectories(branchPath.parent)
+            Files.writeString(branchPath, commitSha + "\n")
+            println("Updated branch reference: $branchPath with SHA: $commitSha")
+        } else {
+            Files.writeString(headPath, commitSha + "\n")
+            println("Updated HEAD directly with SHA: $commitSha")
+        }
+    }
 
     // TODO: support checkout with commitSha
     fun checkout(branchName: String, isNewBranch: Boolean) {
@@ -73,4 +89,29 @@ class CheckoutService(
             .sorted(Comparator.reverseOrder())
             .forEach { Files.delete(it) }
     }
+
+    fun getCurrentBranchName(): String {
+        val branchName = Files.readString(Paths.get(FileUtils.HEAD_FILE)).trim()
+        return if (branchName.startsWith("ref: ")) {
+            branchName.substringAfter("refs: refs/heads/").trim()
+        } else {
+            "HEAD" // detached HEAD state
+        }
+    }
+
+    fun createNewBranch(branchName: String, commitSha: String) {
+        val branchPath = Paths.get("${FileUtils.HEADS_DIR}/$branchName")
+        Files.createDirectories(branchPath.parent)
+        Files.writeString(branchPath, "$commitSha\n")
+    }
+
+    fun readCommitShaFromBranchName(branchName: String): String {
+        val branchPath = Paths.get("${FileUtils.HEADS_DIR}/$branchName")
+        return Files.readString(branchPath).trim()
+    }
+
+    fun checkIfBranchExists(branchName: String): Boolean {
+        return Files.exists(Paths.get("${FileUtils.HEADS_DIR}/$branchName"))
+    }
+
 }

@@ -2,6 +2,12 @@ package com.zeljko.abstractive.zsv.manager.core.objects
 
 import java.nio.charset.StandardCharsets
 
+
+/**
+ * Blob object structure:
+ *
+ * blob {size}\u0000{content}
+ **/
 data class Blob(
     val content: ByteArray,
     val sha: String

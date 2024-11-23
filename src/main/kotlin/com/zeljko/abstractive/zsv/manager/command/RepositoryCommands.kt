@@ -1,6 +1,6 @@
 package com.zeljko.abstractive.zsv.manager.command
 
-import com.zeljko.abstractive.zsv.manager.core.services.CheckoutService
+import com.zeljko.abstractive.zsv.manager.core.services.BranchService
 import com.zeljko.abstractive.zsv.manager.core.services.IndexService
 import com.zeljko.abstractive.zsv.manager.core.services.RepositoryService
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.ZSV_DIR
@@ -11,7 +11,7 @@ import org.springframework.shell.command.annotation.Option
 
 @Command(command = ["zsv"], description = "Zsv commands")
 class RepositoryCommands(
-    private val checkoutService: CheckoutService,
+    private val branchService: BranchService,
     private val indexService: IndexService,
     private val repositoryService: RepositoryService
 ) {
@@ -43,7 +43,7 @@ class RepositoryCommands(
     fun checkout(
         @Option(required = true, description = "Branch name to checkout") branchName: String
     ): String {
-        checkoutService.checkout(branchName, isNewBranch = false)
+        branchService.checkout(branchName, isNewBranch = false)
         return "Switched to branch $branchName"
     }
 
@@ -51,7 +51,7 @@ class RepositoryCommands(
     fun checkoutNewBranch(
         @Option(required = true, description = "New branch name") branchName: String
     ): String {
-        checkoutService.checkout(branchName, isNewBranch = true)
+        branchService.checkout(branchName, isNewBranch = true)
         return "Switched to a new branch $branchName"
     }
 

@@ -1,18 +1,18 @@
 package com.zeljko.abstractive.zsv.manager.core.services
 
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getAllFilesWithAttributes
-import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getCurrentBranchName
 import org.springframework.stereotype.Service
 
 @Service
 class RepositoryService(
-    private val indexService: IndexService
+    private val indexService: IndexService,
+    private val branchService: BranchService
 ) {
     fun status() {
         // fajlovi koji nisu komitovani, ovo je razlika izmedju index i all files
         // fajlovi koji su modifikovani, ovo je ono sto je u indexu i all files ali je mode time drugacije, takodje i ino?
         // current branch?
-        val branchName = getCurrentBranchName()
+        val branchName = branchService.getCurrentBranchName()
         val indexFiles = indexService.getIndexFiles()
         val files = getAllFilesWithAttributes()
 
