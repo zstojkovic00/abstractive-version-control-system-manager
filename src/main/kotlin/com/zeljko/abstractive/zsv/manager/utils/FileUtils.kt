@@ -92,6 +92,17 @@ object FileUtils {
             .collect(Collectors.toCollection(::TreeSet))
     }
 
+     fun cleanWorkingDirectory(path: Path) {
+        Files.walk(path)
+            .filter {
+                !it.startsWith(path.resolve(ZSV_DIR)) &&
+                        !it.startsWith(path.resolve(".git"))
+            }
+            .filter { it != path }
+            .sorted(Comparator.reverseOrder())
+            .forEach { Files.delete(it) }
+    }
+
     fun getZsvDir(): Path {
         val currentPath = getCurrentPath()
         val zsvPath = currentPath.resolve(ZSV_DIR)

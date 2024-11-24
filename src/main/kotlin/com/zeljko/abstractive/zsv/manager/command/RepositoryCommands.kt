@@ -55,6 +55,12 @@ class RepositoryCommands(
         return "Switched to a new branch $branchName"
     }
 
+    @Command(command = ["merge"], description = "Incorporates changes from the named commits into the current branch")
+    fun merge(
+        @Option(required = true, description = "New branch name") giverBranch: String
+    ){
+        branchService.merge(giverBranch)
+    }
 }
 
 
