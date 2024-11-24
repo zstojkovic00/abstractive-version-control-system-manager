@@ -3,14 +3,21 @@ plugins {
 	kotlin("plugin.spring") version "1.9.25"
 	id("org.springframework.boot") version "3.3.3"
 	id("io.spring.dependency-management") version "1.1.6"
+	id("org.graalvm.buildtools.native") version "0.9.16"
+
 }
 
 group = "com.zeljko"
 version = "0.0.1-SNAPSHOT"
 
 java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(21)
+	sourceCompatibility = JavaVersion.VERSION_21
+	targetCompatibility = JavaVersion.VERSION_21
+}
+
+graalvmNative {
+	metadataRepository {
+		enabled = true
 	}
 }
 

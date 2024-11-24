@@ -14,13 +14,12 @@ Project is named according to java conventions :)
 - `zsv log` - Log all commits
 - `zsv add` - Add file to staging area
 - `zsv cat-index` - Read index object content
+- `zsv status` - Display paths that have differences between the index file and current HEAD commit
 
 
 ## TODO:
-- `zsv status`
 - `zsv merge`
-- `zsv add .`
-- `zsv push` ? 
+- `zsv push`
 
 ### Transport Protocol (git://)
 Git protocol
