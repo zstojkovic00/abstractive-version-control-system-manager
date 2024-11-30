@@ -88,28 +88,28 @@ class BranchService(
 
         val changes = treeService.findChanges(targetTreeSha, currentTreeSha)
 
-        changes.forEach { (action, trees) ->
+        changes.forEach { (action, fileChange) ->
             when (action) {
                 "ADDED" -> {
-                    trees.forEach { tree ->
-                        val content = blobService.decompress(tree.sha)
-                        val targetPath = getCurrentPath().resolve(tree.fileName)
+                    fileChange.forEach { file ->
+                        val content = blobService.decompress(file.tree.sha)
+                        val targetPath = getCurrentPath().resolve(file.fullPath)
                         Files.createDirectories(targetPath.parent)
                         Files.write(targetPath, content.getContentWithoutHeader())
                     }
                 }
 
                 "MODIFIED" -> {
-                    trees.forEach { tree ->
-                        val content = blobService.decompress(tree.sha)
-                        val targetPath = getCurrentPath().resolve(tree.fileName)
+                    fileChange.forEach { file ->
+                        val content = blobService.decompress(file.tree.sha)
+                        val targetPath = getCurrentPath().resolve(file.fullPath)
                         Files.write(targetPath, content.getContentWithoutHeader())
                     }
                 }
 
                 "DELETED" -> {
-                    trees.forEach { tree ->
-                        val target = getCurrentPath().resolve(tree.fileName)
+                    fileChange.forEach { file ->
+                        val target = getCurrentPath().resolve(file.fullPath)
                         Files.deleteIfExists(target)
                     }
                 }

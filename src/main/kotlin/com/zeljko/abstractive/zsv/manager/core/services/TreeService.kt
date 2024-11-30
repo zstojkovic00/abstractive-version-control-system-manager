@@ -162,14 +162,13 @@ class TreeService(private val blobService: BlobService) {
         }
     }
 
-    fun findChanges(targetTreeSha: String, currentTreeSha: String, path: Path = getCurrentPath()): MutableMap<String, MutableList<Tree>> {
+    fun findChanges(targetTreeSha: String, currentTreeSha: String, parentPath: String = "")
+            : MutableMap<String, MutableList<Tree.FileChange>> {
+
         val targetTrees = decompress(false, targetTreeSha)
         val currentTrees = decompress(false, currentTreeSha)
 
-        println("Target tree $targetTrees")
-        println("Current tree $currentTrees")
-
-        val changes = mutableMapOf<String, MutableList<Tree>>().apply {
+        val changes = mutableMapOf<String, MutableList<Tree.FileChange>>().apply {
             put("ADDED", mutableListOf())
             put("DELETED", mutableListOf())
             put("MODIFIED", mutableListOf())
@@ -178,24 +177,32 @@ class TreeService(private val blobService: BlobService) {
         for (targetTree in targetTrees) {
             val currentTree = currentTrees.find { it.fileName == targetTree.fileName }
 
+            val fullPath = if (parentPath.isEmpty()) targetTree.fileName
+            else "$parentPath/${targetTree.fileName}"
+
             when {
                 currentTree == null -> {
-                    changes["ADDED"]?.add(targetTree)
+                    changes["ADDED"]?.add(Tree.FileChange(targetTree, fullPath))
                 }
 
                 targetTree.sha != currentTree.sha -> {
                     if (targetTree.fileMode == DIRECTORY.mode) {
-                        val trees = findChanges(targetTree.sha, currentTree.sha, path.resolve(targetTree.fileName))
+                        val trees = findChanges(targetTree.sha, currentTree.sha, fullPath)
                         trees.forEach { (key, tree) -> changes[key]?.addAll(tree) }
                     } else {
-                        changes["MODIFIED"]?.add(targetTree)
+                        changes["MODIFIED"]?.add(Tree.FileChange(targetTree, fullPath))
                     }
                 }
             }
         }
         for (currentTree in currentTrees) {
             if (targetTrees.none { it.fileName == currentTree.fileName }) {
-                changes["DELETED"]?.add(currentTree)
+                val fullPath =
+                    if (parentPath.isEmpty()) currentTree.fileName
+                    else "$parentPath/${currentTree.fileName}"
+
+                changes["DELETED"]?.add(Tree.FileChange(currentTree, fullPath))
+
             }
         }
 
