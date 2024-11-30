@@ -53,9 +53,35 @@ class BranchService(
             println("Already up-to-date")
         } else if (lca == currentCommitSha) {
             println("Fast forward")
-            fastForwardMerge(targetCommitSha, currentCommitSha, currentBranchName)
+            fastForwardMerge(targetCommitSha, currentCommitSha)
         } else {
-            // merge
+            threeWayMerge(lca, targetCommitSha, currentCommitSha)
+        }
+    }
+
+    private fun threeWayMerge(lca: String, targetCommitSha: String, currentCommitSha: String) {
+        val baseTree = treeService.decompress(false, commitService.decompress(lca).treeSha)
+        val targetTree = treeService.decompress(false, commitService.decompress(targetCommitSha).treeSha)
+        val currentTree = treeService.decompress(false, commitService.decompress(currentCommitSha).treeSha)
+
+        val changes = treeService.compareThreeTrees(baseTree, targetTree, currentTree)
+
+        changes.forEach { (action, file) ->
+            when (action) {
+
+                "NO_CONFLICT" -> {
+                    println(file)
+                }
+
+                "CONFLICT" -> {
+                    println(file)
+                }
+
+                "AUTO_MERGE" -> {
+                    println(file)
+                }
+
+            }
         }
     }
 
@@ -97,6 +123,16 @@ class BranchService(
         return currentCommit
     }
 
+    private fun fastForwardMerge(targetCommitSha: String, currentCommitSha: String) {
+        val (targetTreeSha, _) = commitService.decompress(targetCommitSha)
+        val (currentTreeSha, _) = commitService.decompress(currentCommitSha)
+
+        val changes = treeService.compareTwoTrees(targetTreeSha, currentTreeSha)
+        applyChangesToWorkingDirectory(changes)
+
+        updateBranchCommit(targetCommitSha)
+    }
+
     // TODO: support checkout with commitSha
     fun checkout(branchName: String, isNewBranch: Boolean) {
         if (!validateCheckout(branchName)) {
@@ -122,20 +158,10 @@ class BranchService(
         val currentCommit = getCurrentHead()
         val (currentTreeSha, _) = commitService.decompress(currentCommit)
 
-        val changes = treeService.findChanges(targetTreeSha, currentTreeSha)
+        val changes = treeService.compareTwoTrees(targetTreeSha, currentTreeSha)
         applyChangesToWorkingDirectory(changes)
 
         updateHeadReference(branchName)
-    }
-
-    private fun fastForwardMerge(targetCommitSha: String, currentCommitSha: String, currentBranchName: String) {
-        val (targetTreeSha, _) = commitService.decompress(targetCommitSha)
-        val (currentTreeSha, _) = commitService.decompress(currentCommitSha)
-
-        val changes = treeService.findChanges(targetTreeSha, currentTreeSha)
-        applyChangesToWorkingDirectory(changes)
-
-        updateHeadReference(currentBranchName)
     }
 
     private fun applyChangesToWorkingDirectory(changes: MutableMap<String, MutableList<FileChange>>) {

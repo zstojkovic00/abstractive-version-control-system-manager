@@ -163,7 +163,7 @@ class TreeService(private val blobService: BlobService) {
         }
     }
 
-    fun findChanges(targetTreeSha: String, currentTreeSha: String, parentPath: String = "")
+    fun compareTwoTrees(targetTreeSha: String, currentTreeSha: String, parentPath: String = "")
             : MutableMap<String, MutableList<FileChange>> {
 
         val targetTrees = decompress(false, targetTreeSha)
@@ -188,7 +188,7 @@ class TreeService(private val blobService: BlobService) {
 
                 targetTree.sha != currentTree.sha -> {
                     if (targetTree.fileMode == DIRECTORY.mode) {
-                        val trees = findChanges(targetTree.sha, currentTree.sha, fullPath)
+                        val trees = compareTwoTrees(targetTree.sha, currentTree.sha, fullPath)
                         trees.forEach { (key, tree) -> changes[key]?.addAll(tree) }
                     } else {
                         changes["MODIFIED"]?.add(FileChange(targetTree, fullPath))
@@ -208,5 +208,51 @@ class TreeService(private val blobService: BlobService) {
         }
 
         return changes;
+    }
+
+    fun compareThreeTrees(baseTree: List<Tree>, targetTree: List<Tree>, currentTree: List<Tree>): MutableMap<String, MutableList<FileChange>> {
+        val changes = mutableMapOf<String, MutableList<FileChange>>().apply {
+            put("NO_CONFLICT", mutableListOf())
+            put("CONFLICT", mutableListOf())
+            put("AUTO_MERGE", mutableListOf())
+        }
+
+        val fileNamesSet = (baseTree.map { it.fileName } +
+                currentTree.map { it.fileName } +
+                targetTree.map { it.fileName }).toSet()
+
+        fileNamesSet.forEach { fileName ->
+            val baseFile = baseTree.find { it.fileName == fileName }
+            val currentFile = currentTree.find { it.fileName == fileName }
+            val targetFile = targetTree.find { it.fileName == fileName }
+
+            when {
+                // file is not changed or the same changes in both branches
+                currentFile?.sha == targetFile?.sha -> {
+                    changes["NO_CONFLICT"]?.add(FileChange(currentFile!!, fileName))
+                }
+
+                // Changed only in current branch
+                targetFile?.sha == baseFile?.sha -> {
+                    changes["NO_CONFLICT"]?.add(FileChange(currentFile!!, fileName))
+                }
+
+                // Changed only in target branch
+                currentFile?.sha == baseFile?.sha -> {
+                    changes["NO_CONFLICT"]?.add(FileChange(targetFile!!, fileName))
+                }
+
+                // File exist in base branch and is changed in target and current branch
+                baseFile != null && currentFile != null && targetFile != null -> {
+                    changes["AUTO_MERGE"]?.add(FileChange(currentFile, fileName))
+                }
+
+                // Different changes in current and target branch or any other conflict
+                else -> {
+                    changes["CONFLICT"]?.add(FileChange(currentFile ?: targetFile!!, fileName))
+                }
+            }
+        }
+        return changes
     }
 }
