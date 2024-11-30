@@ -46,10 +46,4 @@ data class Tree(
             DIRECTORY -> "tree"
         }
     }
-
-    data class FileChange(
-        val tree: Tree,
-        val fullPath: String
-    )
-
 }

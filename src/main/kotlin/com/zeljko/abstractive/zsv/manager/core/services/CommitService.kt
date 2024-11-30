@@ -139,4 +139,16 @@ class CommitService(
         """.trimIndent()
         )
     }
+
+    fun getCommitDepth(sha: String): Int {
+        var current = decompress(sha)
+        var depth = 1
+
+        while (current.parentSha != null) {
+            current = decompress(current.parentSha!!)
+            depth++
+        }
+
+        return depth
+    }
 }

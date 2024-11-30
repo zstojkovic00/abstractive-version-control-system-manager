@@ -1,5 +1,6 @@
 package com.zeljko.abstractive.zsv.manager.core.services
 
+import com.zeljko.abstractive.zsv.manager.core.objects.FileChange
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.ZSV_DIR
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getCurrentHead
@@ -19,46 +20,81 @@ class BranchService(
 ) {
 
     /**
-    1. The giver branch is an ancestor of the current branch
-    master (receiver) A -> B -> C -> D (HEAD)
-    feature (giver)   A -> B
+    1. The target branch is an ancestor of the current branch
+    master (currentBranch) A -> B -> C -> D (HEAD)
+    feature (target)   A -> B
     No merge is needed
 
-    2. The receiver branch is an ancestor of the giver branch
-    master (receiver) A -> B (HEAD)
-    feature (giver)   A -> B -> C -> D
-    In this case we only update HEAD to last commit of giver (D)
+    2. The currentBranch branch is an ancestor of the target branch
+    master (currentBranch) A -> B (HEAD)
+    feature (target)   A -> B -> C -> D
+    In this case we only update HEAD to last commit of target (D)
 
-    3. The receiver branch and the giver branch are not related.
-    master (receiver) A -> B -> C (HEAD)
+    3. The currentBranch branch and the target branch are not related.
+    master (currentBranch) A -> B -> C (HEAD)
     \
-    feature (giver)         -> D -> E
+    feature (target)         -> D -> E
      **/
-    fun merge(giver: String, receiver: String = getCurrentBranchName()) {
+    fun merge(targetBranchName: String, currentBranchName: String = getCurrentBranchName()) {
 
-        if (giver == receiver) {
-            throw IllegalStateException("Already on branch $receiver")
+        if (targetBranchName == currentBranchName) {
+            throw IllegalStateException("Already on branch $currentBranchName")
         }
 
-//        if (checkIfBranchExists(giver)) {
-//            throw IllegalArgumentException("There is no branch $giver")
-//        }
+        if (!checkIfBranchExists(targetBranchName)) {
+            throw IllegalArgumentException("There is no branch $targetBranchName")
+        }
 
-        lastCommonAncestor(giver, receiver)
+        val currentCommitSha = getCurrentHead()
+        val targetCommitSha = getShaFromBranchName(targetBranchName)
+        val lca = findLastCommonAncestor(currentCommitSha, targetCommitSha)
+
+        if (lca == targetCommitSha) {
+            println("Already up-to-date")
+        } else if (lca == currentCommitSha) {
+            println("Fast forward")
+            fastForwardMerge(targetCommitSha, currentCommitSha, currentBranchName)
+        } else {
+            // merge
+        }
     }
 
 
     /**
+    Finds the Last Common Ancestor (LCA) between two commits in a git-like commit history.
+
     master: A -> B -> C -> D (HEAD) depth = 4
     \
-    feature:     E -> F depth = 3
+    feature:      E -> F depth = 3
      **/
-    private fun lastCommonAncestor(giver: String, receiver: String) {
-        val headCommit = getCurrentHead()
-        val giverCommit = getShaFromBranchName(giver)
-        println("Head commit $headCommit")
-        println("Giver commit")
+    private fun findLastCommonAncestor(currentCommitSha: String, targetCommitSha: String): String {
+        println("Head commit $currentCommitSha")
+        println("Target commit $targetCommitSha")
 
+        val targetCommitDepth = commitService.getCommitDepth(targetCommitSha)
+        val currentCommitDepth = commitService.getCommitDepth(currentCommitSha)
+        println("Head commit depth $currentCommitDepth")
+        println("Target commit depth $targetCommitDepth")
+
+        var currentCommit = currentCommitSha
+        var targetCommit = targetCommitSha
+
+        if (currentCommitDepth > targetCommitDepth) {
+            for (i in 0 until (currentCommitDepth - targetCommitDepth)) {
+                currentCommit = commitService.decompress(currentCommit).parentSha!!
+            }
+        } else if (currentCommitDepth < targetCommitDepth) {
+            for (i in 0 until (targetCommitDepth - currentCommitDepth)) {
+                targetCommit = commitService.decompress(targetCommit).parentSha!!
+            }
+        }
+
+        while (currentCommit != targetCommit) {
+            currentCommit = commitService.decompress(currentCommit).parentSha!!
+            targetCommit = commitService.decompress(targetCommit).parentSha!!
+        }
+
+        return currentCommit
     }
 
     // TODO: support checkout with commitSha
@@ -87,7 +123,22 @@ class BranchService(
         val (currentTreeSha, _) = commitService.decompress(currentCommit)
 
         val changes = treeService.findChanges(targetTreeSha, currentTreeSha)
+        applyChangesToWorkingDirectory(changes)
 
+        updateHeadReference(branchName)
+    }
+
+    private fun fastForwardMerge(targetCommitSha: String, currentCommitSha: String, currentBranchName: String) {
+        val (targetTreeSha, _) = commitService.decompress(targetCommitSha)
+        val (currentTreeSha, _) = commitService.decompress(currentCommitSha)
+
+        val changes = treeService.findChanges(targetTreeSha, currentTreeSha)
+        applyChangesToWorkingDirectory(changes)
+
+        updateHeadReference(currentBranchName)
+    }
+
+    private fun applyChangesToWorkingDirectory(changes: MutableMap<String, MutableList<FileChange>>) {
         changes.forEach { (action, fileChange) ->
             when (action) {
                 "ADDED" -> {
@@ -115,8 +166,6 @@ class BranchService(
                 }
             }
         }
-
-        updateHeadReference(branchName)
     }
 
     @EventListener

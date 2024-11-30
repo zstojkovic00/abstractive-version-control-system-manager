@@ -1,5 +1,6 @@
 package com.zeljko.abstractive.zsv.manager.core.services
 
+import com.zeljko.abstractive.zsv.manager.core.objects.FileChange
 import com.zeljko.abstractive.zsv.manager.core.objects.Tree
 import com.zeljko.abstractive.zsv.manager.utils.*
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getObjectShaPath
@@ -163,12 +164,12 @@ class TreeService(private val blobService: BlobService) {
     }
 
     fun findChanges(targetTreeSha: String, currentTreeSha: String, parentPath: String = "")
-            : MutableMap<String, MutableList<Tree.FileChange>> {
+            : MutableMap<String, MutableList<FileChange>> {
 
         val targetTrees = decompress(false, targetTreeSha)
         val currentTrees = decompress(false, currentTreeSha)
 
-        val changes = mutableMapOf<String, MutableList<Tree.FileChange>>().apply {
+        val changes = mutableMapOf<String, MutableList<FileChange>>().apply {
             put("ADDED", mutableListOf())
             put("DELETED", mutableListOf())
             put("MODIFIED", mutableListOf())
@@ -182,7 +183,7 @@ class TreeService(private val blobService: BlobService) {
 
             when {
                 currentTree == null -> {
-                    changes["ADDED"]?.add(Tree.FileChange(targetTree, fullPath))
+                    changes["ADDED"]?.add(FileChange(targetTree, fullPath))
                 }
 
                 targetTree.sha != currentTree.sha -> {
@@ -190,7 +191,7 @@ class TreeService(private val blobService: BlobService) {
                         val trees = findChanges(targetTree.sha, currentTree.sha, fullPath)
                         trees.forEach { (key, tree) -> changes[key]?.addAll(tree) }
                     } else {
-                        changes["MODIFIED"]?.add(Tree.FileChange(targetTree, fullPath))
+                        changes["MODIFIED"]?.add(FileChange(targetTree, fullPath))
                     }
                 }
             }
@@ -201,7 +202,7 @@ class TreeService(private val blobService: BlobService) {
                     if (parentPath.isEmpty()) currentTree.fileName
                     else "$parentPath/${currentTree.fileName}"
 
-                changes["DELETED"]?.add(Tree.FileChange(currentTree, fullPath))
+                changes["DELETED"]?.add(FileChange(currentTree, fullPath))
 
             }
         }
