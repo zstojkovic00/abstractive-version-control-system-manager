@@ -13,7 +13,7 @@ import java.nio.file.Path
 
 @Service
 class BlobService {
-    fun decompress(sha: String, basePath: Path): Blob {
+    fun decompress(sha: String, basePath: Path = getCurrentPath()): Blob {
         if (sha.length != 40) {
             throw InvalidHashException("Invalid blob hash. It must be exactly 40 characters long.")
         }

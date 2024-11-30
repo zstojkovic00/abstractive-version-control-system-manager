@@ -56,12 +56,12 @@ class CommitService(
         return sha
     }
 
-    fun commit(message: String): String {
-        val treeSha = treeService.compressFromFile(getCurrentPath())
+    fun commit(message: String) {
+        val treeSha = treeService.compressFromFile()
         val parentSha = getCurrentHead()
         val sha = compressFromMessage(message, treeSha, parentSha)
+        // update branch commit
         eventPublisher.publishEvent(sha)
-        return sha
     }
 
     fun compressFromContent(decompressedContent: ByteArray, path: Path): Any {

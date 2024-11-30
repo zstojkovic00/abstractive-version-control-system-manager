@@ -2,7 +2,6 @@ package com.zeljko.abstractive.zsv.manager.core.services
 
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.ZSV_DIR
-import com.zeljko.abstractive.zsv.manager.utils.FileUtils.cleanWorkingDirectory
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getCurrentHead
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getCurrentPath
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.updateHeadReference
@@ -15,7 +14,8 @@ import java.nio.file.Paths
 @Service
 class BranchService(
     private val commitService: CommitService,
-    private val treeService: TreeService
+    private val treeService: TreeService,
+    private val blobService: BlobService
 ) {
 
     /**
@@ -31,7 +31,7 @@ class BranchService(
 
     3. The receiver branch and the giver branch are not related.
     master (receiver) A -> B -> C (HEAD)
-                           \
+    \
     feature (giver)         -> D -> E
      **/
     fun merge(giver: String, receiver: String = getCurrentBranchName()) {
@@ -50,12 +50,12 @@ class BranchService(
 
     /**
     master: A -> B -> C -> D (HEAD) depth = 4
-                 \
+    \
     feature:     E -> F depth = 3
      **/
     private fun lastCommonAncestor(giver: String, receiver: String) {
         val headCommit = getCurrentHead()
-        val giverCommit = readCommitShaFromBranchName(giver)
+        val giverCommit = getShaFromBranchName(giver)
         println("Head commit $headCommit")
         println("Giver commit")
 
@@ -75,20 +75,47 @@ class BranchService(
     }
 
     private fun checkoutExistingBranch(branchName: String) {
-        val currentPath = getCurrentPath()
-
         if (!checkIfBranchExists(branchName)) {
             throw IllegalArgumentException("There is no branch $branchName")
         }
+        // target branch tree
+        val commitSha = getShaFromBranchName(branchName)
+        val (targetTreeSha, _) = commitService.decompress(commitSha)
 
-        val commitSha = readCommitShaFromBranchName(branchName)
-        println(commitSha)
-        cleanWorkingDirectory(currentPath)
+        // current branch tree
+        val currentCommit = getCurrentHead()
+        val (currentTreeSha, _) = commitService.decompress(currentCommit)
 
-        val (treeSha, _) = commitService.decompress(commitSha, currentPath)
-        val decompressedTree = treeService.getDecompressedTreeContent(treeSha, currentPath)
-        println(decompressedTree)
-        treeService.extractToDisk(decompressedTree, treeSha, currentPath, currentPath)
+        val changes = treeService.findChanges(targetTreeSha, currentTreeSha)
+
+        changes.forEach { (action, trees) ->
+            when (action) {
+                "ADDED" -> {
+                    trees.forEach { tree ->
+                        val content = blobService.decompress(tree.sha)
+                        val targetPath = getCurrentPath().resolve(tree.fileName)
+                        Files.createDirectories(targetPath.parent)
+                        Files.write(targetPath, content.getContentWithoutHeader())
+                    }
+                }
+
+                "MODIFIED" -> {
+                    trees.forEach { tree ->
+                        val content = blobService.decompress(tree.sha)
+                        val targetPath = getCurrentPath().resolve(tree.fileName)
+                        Files.write(targetPath, content.getContentWithoutHeader())
+                    }
+                }
+
+                "DELETED" -> {
+                    trees.forEach { tree ->
+                        val target = getCurrentPath().resolve(tree.fileName)
+                        Files.deleteIfExists(target)
+                    }
+                }
+            }
+        }
+
         updateHeadReference(branchName)
     }
 
@@ -129,7 +156,7 @@ class BranchService(
     fun getCurrentBranchName(): String {
         val branchName = Files.readString(Paths.get(FileUtils.HEAD_FILE)).trim()
         return if (branchName.startsWith("ref: ")) {
-            branchName.substringAfter("refs: refs/heads/").trim()
+            branchName.substringAfter("ref: refs/heads/").trim()
         } else {
             "HEAD" // detached HEAD state
         }
@@ -141,7 +168,7 @@ class BranchService(
         Files.writeString(branchPath, "$commitSha\n")
     }
 
-    fun readCommitShaFromBranchName(branchName: String): String {
+    fun getShaFromBranchName(branchName: String): String {
         val branchPath = Paths.get("${FileUtils.HEADS_DIR}/$branchName")
         return Files.readString(branchPath).trim()
     }

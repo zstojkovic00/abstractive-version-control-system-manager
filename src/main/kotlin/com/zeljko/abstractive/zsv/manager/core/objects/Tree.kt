@@ -7,7 +7,7 @@ import com.zeljko.abstractive.zsv.manager.core.objects.ObjectType.*
  *
  * Tree object structure:
  *
- * tree {size}\u00000{content}
+ * tree {size}\u0000{content}
  * {mode} {name}\u0000{sha1}\n  (repeated for each entry)
  *
  * Example:

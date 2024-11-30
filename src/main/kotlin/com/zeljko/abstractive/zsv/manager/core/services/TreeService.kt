@@ -40,8 +40,10 @@ class TreeService(private val blobService: BlobService) {
 
     fun compressFromFile(path: Path = getCurrentPath()): String {
         // TODO: .gitignore
-        val ignoredItems = setOf(ZSV_DIR, ".git", ".gradle", ".idea", "build", "HELP.md",
-            "abstractive-version-control-system-manager.log")
+        val ignoredItems = setOf(
+            ZSV_DIR, ".git", ".gradle", ".idea", "build", "HELP.md",
+            "abstractive-version-control-system-manager.log"
+        )
 
         val objects = mutableListOf<Tree>()
         Files.list(path).use { stream ->
@@ -151,11 +153,52 @@ class TreeService(private val blobService: BlobService) {
                     val decompressedTree = getDecompressedTreeContent(tree.sha, repositoryPath)
                     extractToDisk(decompressedTree, tree.sha, fullPath, repositoryPath)
                 }
+
                 REGULAR_FILE.mode, EXECUTABLE_FILE.mode -> {
                     val content = blobService.decompress(tree.sha, repositoryPath)
                     Files.write(fullPath, content.getContentWithoutHeader())
                 }
             }
         }
+    }
+
+    fun findChanges(targetTreeSha: String, currentTreeSha: String, path: Path = getCurrentPath()): MutableMap<String, MutableList<Tree>> {
+        val targetTrees = decompress(false, targetTreeSha)
+        val currentTrees = decompress(false, currentTreeSha)
+
+        println("Target tree $targetTrees")
+        println("Current tree $currentTrees")
+
+        val changes = mutableMapOf<String, MutableList<Tree>>().apply {
+            put("ADDED", mutableListOf())
+            put("DELETED", mutableListOf())
+            put("MODIFIED", mutableListOf())
+        }
+
+        for (targetTree in targetTrees) {
+            val currentTree = currentTrees.find { it.fileName == targetTree.fileName }
+
+            when {
+                currentTree == null -> {
+                    changes["ADDED"]?.add(targetTree)
+                }
+
+                targetTree.sha != currentTree.sha -> {
+                    if (targetTree.fileMode == DIRECTORY.mode) {
+                        val trees = findChanges(targetTree.sha, currentTree.sha, path.resolve(targetTree.fileName))
+                        trees.forEach { (key, tree) -> changes[key]?.addAll(tree) }
+                    } else {
+                        changes["MODIFIED"]?.add(targetTree)
+                    }
+                }
+            }
+        }
+        for (currentTree in currentTrees) {
+            if (targetTrees.none { it.fileName == currentTree.fileName }) {
+                changes["DELETED"]?.add(currentTree)
+            }
+        }
+
+        return changes;
     }
 }

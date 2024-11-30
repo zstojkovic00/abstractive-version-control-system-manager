@@ -7,18 +7,29 @@ import com.zeljko.abstractive.zsv.manager.utils.FileUtils.ZSV_DIR
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.createZsvStructure
 import org.springframework.shell.command.annotation.Command
 import org.springframework.shell.command.annotation.Option
+import java.nio.file.Files
+import java.nio.file.Paths
 
 
 @Command(command = ["zsv"], description = "Zsv commands")
 class RepositoryCommands(
     private val branchService: BranchService,
     private val indexService: IndexService,
-    private val repositoryService: RepositoryService
+    private val repositoryService: RepositoryService,
 ) {
     @Command(command = ["init"], description = "Initialize empty $ZSV_DIR repository")
     fun initRepository(): String {
+        if (Files.exists(Paths.get(ZSV_DIR))) {
+            return "Zsv repository already exist"
+        }
+
         val zsvPath = createZsvStructure()
         return "Initialized empty zsv repository in $zsvPath"
+    }
+
+    @Command(command = ["branch"], description = "Prints current branch")
+    fun getCurrentBranch(): String {
+        return branchService.getCurrentBranchName()
     }
 
     @Command(command = ["status"], description = "prints current branch, untracked files, changes to be committed")
@@ -58,7 +69,7 @@ class RepositoryCommands(
     @Command(command = ["merge"], description = "Incorporates changes from the named commits into the current branch")
     fun merge(
         @Option(required = true, description = "New branch name") giverBranch: String
-    ){
+    ) {
         branchService.merge(giverBranch)
     }
 }

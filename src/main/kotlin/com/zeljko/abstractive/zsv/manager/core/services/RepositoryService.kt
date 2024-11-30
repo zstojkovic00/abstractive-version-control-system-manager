@@ -14,7 +14,7 @@ class RepositoryService(
         val indexFiles = indexService.getIndexFiles()
         val files = getAllFilesWithAttributes()
         val untrackedFiles = mutableListOf<IndexEntry.FileStatus>()
-        val modificationFiles = mutableListOf<IndexEntry.FileStatus>()
+        val modifiedFiles = mutableListOf<IndexEntry.FileStatus>()
 
         // [1, 4, 5] // sorted
         for (i in files) {
@@ -25,7 +25,7 @@ class RepositoryService(
                     i.pathName == j.pathName -> {
                         b = true
                         if (i.mtime != j.mtime || i.ino != j.ino) {
-                            modificationFiles.add(i)
+                            modifiedFiles.add(i)
                         }
                         break
                     }
@@ -43,28 +43,28 @@ class RepositoryService(
             }
         }
 
-        return printStatus(branchName, untrackedFiles, modificationFiles)
+        return printStatus(branchName, untrackedFiles, modifiedFiles)
     }
 
     private fun printStatus(
         branchName: String,
         untrackedFiles: List<IndexEntry.FileStatus>,
-        modificationFiles: List<IndexEntry.FileStatus>
+        modifiedFiles: List<IndexEntry.FileStatus>
     ): String {
         val statusBuilder = StringBuilder()
 
         statusBuilder.append("On branch $branchName\n\n")
 
-        if (modificationFiles.isEmpty() && untrackedFiles.isEmpty()) {
+        if (modifiedFiles.isEmpty() && untrackedFiles.isEmpty()) {
             statusBuilder.append("nothing to commit, working tree clean")
             return statusBuilder.toString()
         }
 
-        if (modificationFiles.isNotEmpty()) {
+        if (modifiedFiles.isNotEmpty()) {
             statusBuilder.append("Changes not staged for commit:\n")
             statusBuilder.append("  (use \"zsv add/rm <file>...\" to update what will be committed)\n")
 
-            modificationFiles.forEach { file ->
+            modifiedFiles.forEach { file ->
                 statusBuilder.append("\tmodified:   ${file.pathName}\n")
             }
 
