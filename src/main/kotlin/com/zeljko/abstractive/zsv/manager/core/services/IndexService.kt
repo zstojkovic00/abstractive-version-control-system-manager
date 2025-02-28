@@ -54,7 +54,7 @@ class IndexService(
     private fun updateIndexEntry(indexEntry: IndexEntry, offset: Int) {
         RandomAccessFile(indexPath.toFile(), "rw").use { file ->
             file.seek(offset.toLong())
-            val blobSha = blobService.compressFromFile(true, Paths.get(indexEntry.pathName))
+            val blobSha = blobService.compressFromFile(Paths.get(indexEntry.pathName))
             indexEntry.serialize(file, blobSha)
         }
     }
@@ -69,7 +69,7 @@ class IndexService(
 
             file.seek(file.length())
 
-            val blobSha = blobService.compressFromFile(true, filePath)
+            val blobSha = blobService.compressFromFile(filePath)
             indexEntry.serialize(file, blobSha)
         }
     }

@@ -30,8 +30,7 @@ data class Blob(
     }
 
     override fun hashCode(): Int {
-        return sha.take(8).toInt(16)
-
+        return sha.hashCode()
     }
 
 }

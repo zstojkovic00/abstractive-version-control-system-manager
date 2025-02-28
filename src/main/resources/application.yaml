@@ -9,3 +9,9 @@ spring:
   main:
     banner-mode: off
     web-application-type: none
+
+minio:
+  endpoint: http://localhost:9005
+  access-key: minioadmin
+  secret_key: minioadmin
+  bucket-name: test-bucket

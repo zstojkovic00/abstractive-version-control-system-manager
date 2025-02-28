@@ -1,7 +1,7 @@
 package com.zeljko.abstractive.zsv.manager.utils
 
 import com.zeljko.abstractive.zsv.manager.core.objects.IndexEntry
-import java.nio.charset.StandardCharsets
+import java.nio.charset.StandardCharsets.*
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -30,10 +30,10 @@ object FileUtils {
             Files.createDirectories(zsvPath.resolve(it))
         }
 
-        Files.writeString(zsvPath.resolve("HEAD"), "ref: refs/heads/master\n", StandardCharsets.UTF_8)
+        Files.writeString(zsvPath.resolve("HEAD"), "ref: refs/heads/master\n", UTF_8)
         Files.writeString(
             zsvPath.resolve("description"),
-            "Unnamed repository; edit this file 'description' to name the repository.\n", StandardCharsets.UTF_8
+            "Unnamed repository; edit this file 'description' to name the repository.\n", UTF_8
         )
         return zsvPath
     }

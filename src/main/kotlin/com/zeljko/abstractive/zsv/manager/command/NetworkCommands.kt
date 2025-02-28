@@ -1,29 +1,53 @@
 package com.zeljko.abstractive.zsv.manager.command
 
 import com.zeljko.abstractive.zsv.manager.transport.client.GitClient
+import io.minio.BucketExistsArgs
+import io.minio.MakeBucketArgs
+import io.minio.MinioClient
+import io.minio.PutObjectArgs
 import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.shell.command.annotation.Command
 import org.springframework.shell.command.annotation.Option
+import java.io.File
+import java.io.FileInputStream
 
 
 @Command(command = ["zsv"], description = "Zsv commands")
 class NetworkCommands(
-    @Qualifier("native") private val nativeClient: GitClient,
-    @Qualifier("http") private val httpClient: GitClient
+    private val minioClient: MinioClient,
+    @Value("\${minio.bucket-name}") private val bucketName: String,
 ) {
 
-    // zsv clone git://127.0.0.1/test-repo
-    @Command(command = ["clone"], description = "Clone remote repository from git server")
-    fun cloneRepository(
-        @Option(longNames = ["url"], required = true, description = "Url of remote git repository") url: String,
+
+    @Command(command = ["push"], description = "Push to remote server")
+    fun push(
+        @Option(shortNames = ['f'], description = "File path") filePath: String
+
     ): String {
-        val client = when {
-            url.startsWith("git://") -> nativeClient
-            url.startsWith("http://") || url.startsWith("https://") -> httpClient
-            else -> throw IllegalArgumentException("Unsupported protocol")
+        val bucketExists = minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucketName).build())
+
+        if (!bucketExists) {
+            minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucketName).build())
+            println("Bucket '$bucketName' is created")
         }
 
-        client.clone(url)
-        return "test"
+        val file = File(filePath)
+        if (!file.exists()) {
+            return "File $filePath does not exist"
+        }
+
+        val objectName = file.name
+        val inputStream = FileInputStream(file)
+
+        minioClient.putObject(
+            PutObjectArgs.builder()
+                .bucket(bucketName)
+                .`object`(objectName)
+                .stream(inputStream, file.length(), -1)
+                .build()
+        )
+
+        return "File is successfully uploaded";
     }
 }

@@ -3,7 +3,7 @@ plugins {
     kotlin("plugin.spring") version "1.9.25"
     id("org.springframework.boot") version "3.3.3"
     id("io.spring.dependency-management") version "1.1.6"
-    id("org.graalvm.buildtools.native") version "0.9.16"
+    //id("org.graalvm.buildtools.native") version "0.9.16"
 
 }
 
@@ -15,17 +15,6 @@ java {
     targetCompatibility = JavaVersion.VERSION_21
 }
 
-graalvmNative {
-    metadataRepository {
-        enabled = true
-    }
-    binaries {
-        named("main") {
-			imageName.set("zsv")
-        }
-    }
-}
-
 repositories {
     mavenCentral()
 }
@@ -35,6 +24,7 @@ extra["springShellVersion"] = "3.3.2"
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.springframework.shell:spring-shell-starter")
+    implementation("io.minio:minio:8.5.2")
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")

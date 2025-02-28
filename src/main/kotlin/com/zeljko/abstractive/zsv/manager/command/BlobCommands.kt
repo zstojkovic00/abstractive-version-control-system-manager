@@ -15,8 +15,6 @@ class BlobCommands(private val blobService: BlobService) {
         @Option(shortNames = ['f'], required = true, description = "Path to the file to decompress") sha: String
     ): String {
         val blob = blobService.decompress(sha, getCurrentPath()).toString()
-
-
         // remove header (blob content.length)
         return blob.substringAfter('\u0000')
     }
@@ -24,12 +22,11 @@ class BlobCommands(private val blobService: BlobService) {
     // zsv hash-object -w -f src/test.txt
     @Command(command = ["hash-object"], description = "Create blob object")
     fun compressFileToBlobObject(
-        @Option(shortNames = ['w'], required = false, description = "When used with the -w flag, it also writes the object to the .zsv/objects directory") write: Boolean = false,
         @Option(shortNames = ['f'], required = true, description = "Path to the file to compress") fileToCompress: String
     ): String {
 
         val path = Paths.get(fileToCompress)
-        return blobService.compressFromFile(write, path)
+        return blobService.compressFromFile(path)
     }
 
 }

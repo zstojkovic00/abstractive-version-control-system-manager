@@ -58,7 +58,7 @@ class TreeService(private val blobService: BlobService) {
                         val sha = compressFromFile(file)
                         objects.add(Tree(DIRECTORY.mode, name, sha))
                     } else {
-                        val blobSha = blobService.compressFromFile(true, file)
+                        val blobSha = blobService.compressFromFile(file)
                         val fileMode = when {
                             Files.isExecutable(file) -> EXECUTABLE_FILE
                             // TODO: fix -> Seems like compressFromFile for symbolic link is not working well
@@ -210,7 +210,11 @@ class TreeService(private val blobService: BlobService) {
         return changes;
     }
 
-    fun compareThreeTrees(baseTree: List<Tree>, targetTree: List<Tree>, currentTree: List<Tree>): MutableMap<String, MutableList<FileChange>> {
+    fun compareThreeTrees(
+        baseTree: List<Tree>,
+        targetTree: List<Tree>,
+        currentTree: List<Tree>
+    ): MutableMap<String, MutableList<FileChange>> {
         val changes = mutableMapOf<String, MutableList<FileChange>>().apply {
             put("NO_CONFLICT", mutableListOf())
             put("CONFLICT", mutableListOf())

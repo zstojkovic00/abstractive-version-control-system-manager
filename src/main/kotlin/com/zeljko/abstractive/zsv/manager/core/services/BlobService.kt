@@ -34,7 +34,7 @@ class BlobService {
         )
     }
 
-    fun compressFromFile(write: Boolean, path: Path): String {
+    fun compressFromFile(path: Path): String {
         val fileContent = Files.readAllBytes(path)
 
         val blobHeader = "blob ${fileContent.size}\u0000".toByteArray(Charsets.UTF_8)
@@ -50,12 +50,8 @@ class BlobService {
         )
 
         val currentDirectory = getCurrentPath()
-//        storeObject(currentDirectory, blob.sha, blob.content)
-
-        if (write) {
-            val objectsDirectory = currentDirectory.resolve(OBJECTS_DIR)
-            storeObject(objectsDirectory, blob.sha, blob.content)
-        }
+        val objectsDirectory = currentDirectory.resolve(OBJECTS_DIR)
+        storeObject(objectsDirectory, blob.sha, blob.content)
 
         return blob.sha
     }
