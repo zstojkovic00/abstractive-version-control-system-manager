@@ -13,5 +13,4 @@ spring:
 minio:
   endpoint: http://localhost:9005
   access-key: minioadmin
-  secret_key: minioadmin
-  bucket-name: test-bucket
+  secret-key: minioadmin

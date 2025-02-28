@@ -1,4 +1,4 @@
-package com.zeljko.abstractive.zsv.manager.utils
+package com.zeljko.abstractive.zsv.manager.transport.client
 
 import io.minio.MinioClient
 import org.springframework.beans.factory.annotation.Value
@@ -7,7 +7,10 @@ import org.springframework.stereotype.Component
 
 
 @Component
-class MiniConfig {
+class MinioConfig {
+    object MinioConstants {
+        const val DEFAULT_BUCKET_NAME = "zsv-repo"
+    }
 
     @Value("\${minio.endpoint}")
     private lateinit var endpoint: String

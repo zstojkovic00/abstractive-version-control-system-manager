@@ -68,19 +68,9 @@ class BranchService(
 
         changes.forEach { (action, file) ->
             when (action) {
-
-                "NO_CONFLICT" -> {
-                    println(file)
-                }
-
-                "CONFLICT" -> {
-                    println(file)
-                }
-
-                "AUTO_MERGE" -> {
-                    println(file)
-                }
-
+                "NO_CONFLICT" -> { println(file) }
+                "CONFLICT" -> { println(file) }
+                "AUTO_MERGE" -> { println(file) }
             }
         }
     }
