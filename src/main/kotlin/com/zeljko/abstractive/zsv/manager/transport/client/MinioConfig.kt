@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component
 
 @Component
 class MinioConfig {
+
     object MinioConstants {
         const val DEFAULT_BUCKET_NAME = "zsv-repo"
     }

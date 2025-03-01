@@ -4,15 +4,17 @@ import com.zeljko.abstractive.zsv.manager.transport.client.MinioConfig.MinioCons
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.HEADS_DIR
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.OBJECTS_DIR
 import io.minio.*
+import org.springframework.stereotype.Service
 import java.io.FileInputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 
+
+@Service
 class MinioService(
     private val minioClient: MinioClient,
 ) {
-
 
     fun push(branchName: String): String {
         val bucket = DEFAULT_BUCKET_NAME
