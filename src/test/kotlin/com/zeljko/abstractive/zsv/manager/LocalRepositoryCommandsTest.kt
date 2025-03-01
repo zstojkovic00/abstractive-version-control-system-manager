@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test
 import org.testcontainers.containers.BindMode
 
 @Testcontainers
-class RepositoryCommandsTest {
+class LocalRepositoryCommandsTest {
     companion object {
 
         @Container

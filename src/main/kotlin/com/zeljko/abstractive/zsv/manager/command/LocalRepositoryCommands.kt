@@ -12,7 +12,7 @@ import java.nio.file.Paths
 
 
 @Command(command = ["zsv"], description = "Zsv commands")
-class RepositoryCommands(
+class LocalRepositoryCommands(
     private val branchService: BranchService,
     private val indexService: IndexService,
     private val repositoryService: RepositoryService,

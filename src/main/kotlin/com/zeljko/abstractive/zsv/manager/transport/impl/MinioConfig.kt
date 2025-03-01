@@ -1,4 +1,4 @@
-package com.zeljko.abstractive.zsv.manager.transport.client
+package com.zeljko.abstractive.zsv.manager.transport.impl
 
 import io.minio.MinioClient
 import org.springframework.beans.factory.annotation.Value
@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component
 class MinioConfig {
 
     object MinioConstants {
-        const val DEFAULT_BUCKET_NAME = "zsv-repo"
+        const val PROJECT_NAME = "abstractive-history-tracking-system-manager"
     }
 
     @Value("\${minio.endpoint}")

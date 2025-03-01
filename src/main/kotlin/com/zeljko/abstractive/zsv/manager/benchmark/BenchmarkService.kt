@@ -4,6 +4,7 @@ import java.io.File
 import com.zeljko.abstractive.zsv.manager.core.services.BlobService
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getCurrentPath
 import com.zeljko.abstractive.zsv.manager.utils.FileUtils.getObjectShaPath
+import org.springframework.stereotype.Service
 import java.nio.file.Files
 import java.nio.file.Paths
 import kotlin.io.path.extension
@@ -17,7 +18,9 @@ data class BenchmarkResult(
     val zsvCompressedSize: Long,
 )
 
-class Benchmark(
+
+@Service
+class BenchmarkService(
     private val blobService: BlobService
 ) {
 
@@ -64,15 +67,6 @@ class Benchmark(
                 ZSV Compression Size ${result.zsvCompressedSize} bytes
             """.trimIndent()
             )
-        }
-    }
-
-    companion object {
-        @JvmStatic
-        fun main(args: Array<String>) {
-            val blobService = BlobService()
-            val benchmark = Benchmark(blobService)
-            benchmark.run()
         }
     }
 }
