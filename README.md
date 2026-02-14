@@ -20,8 +20,6 @@ Branching is lightweight - branches are just text files containing commit SHA. M
 ### Demo
 ![demo](demo.gif)
 
-> Note: `demo.cast` appears as "not staged" because it was being modified by asciinema during the recording.
-
 
 ## Prerequisites
 

@@ -18,7 +18,7 @@ object FileUtils {
     const val HEAD_FILE = "$ZSV_DIR/HEAD"
     const val HEADS_DIR = "$REFS_DIR/heads"
     const val INDEX_DIR = "$ZSV_DIR/index"
-    public val ignoredItems = setOf(
+    val ignoredItems = setOf(
         ZSV_DIR, ".git", ".gradle", ".idea", "build", "HELP.md",
         "abstractive-version-control-system-manager.log"
     )
